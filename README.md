@@ -29,23 +29,23 @@ fn main() => for i in 100000 => print(i)
 
 Besides the fact that this code is the same in meaning, it is also the same in execution speed!
 
-| place | language       | time      | difference |
-| ----- | -------------- | --------- | ---------- |
-| 1     | ⚡️ kebab       | 0.046490s | -          |
-| 2     | ⚡️ C (GCC)     | 0.046698s | +0.4%      |
-| 3     | ⚡️ Rust        | 0.106954s | +130.1%    |
-| 4     | ⚡️ C++         | 0.146590s | +215.3%    |
-| 5     | 🐍 Python      | 0.232401s | +399.9%    |
-| 6     | 🐍 JavaScript  | 0.276098s | +493.9%    |
+| place | language      | time      | difference |
+| ----- | ------------- | --------- | ---------- |
+| 1     | ⚡️ kebab      | 0.046490s | -          |
+| 2     | ⚡️ C (GCC)    | 0.046698s | +0.4%      |
+| 3     | ⚡️ Rust       | 0.106954s | +130.1%    |
+| 4     | ⚡️ C++        | 0.146590s | +215.3%    |
+| 5     | 🐍 Python     | 0.232401s | +399.9%    |
+| 6     | 🐍 JavaScript | 0.276098s | +493.9%    |
 
 🐍 - interpreted | ⚡️ - compiled
 
 ## Installation
 
-1) Download the release 1.0.0 beta or the latest one that will be available on [GitHub](https://github.com/lamp100307/kebab)
-2) Add to PATH
-3) Run `kebab new <project_name>`
-4) Programming and enjoy!
+1. Download the release 1.0.0 beta or the latest one that will be available on [GitHub](https://github.com/lamp100307/kebab)
+2. Add to PATH
+3. Run `kebab new <project_name>`
+4. Programming and enjoy!
 
 ### Build from source code
 

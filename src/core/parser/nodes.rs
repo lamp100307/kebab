@@ -3,6 +3,6 @@ pub enum AstNode {
     Op {
         left: Box<AstNode>,
         op: String,
-        right: Box<AstNode>
-    }
+        right: Box<AstNode>,
+    },
 }

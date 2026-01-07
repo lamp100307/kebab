@@ -1,6 +1,7 @@
 use regex::Regex;
 use std::fmt::Display;
 
+#[derive(Debug)]
 pub enum TokenType {
     Int,
     OP,
@@ -15,7 +16,7 @@ impl Display for TokenType {
 pub(crate) struct Token {
     token_type: TokenType,
     value: String,
-    regex: Regex
+    regex: Regex,
 }
 
 impl Display for Token {

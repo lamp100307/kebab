@@ -1,10 +1,11 @@
 mod core;
+extern crate regex;
 
 use core::lexer::lexer::lex;
+use core::llvm::context::context_maker::{Context, Dependencies};
+use core::llvm::llvm_ir::generator::IrGenerator;
 use core::parser::parser::Parser;
 use core::semantic::semantic::SemanticAnalyser;
-use core::llvm::context::contex_maker::{ Context, Dependencies };
-use core::llvm::llvm_ir::generator::IrGenerator;
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
@@ -58,5 +59,4 @@ fn main() {
 
     let mut ir_generator = IrGenerator::new(vec![ir], context_maker.dependencies.clone());
     let ir = ir_generator.gen_ir();
-
 }
