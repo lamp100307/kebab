@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum AstNode {
     Program(Vec<AstNode>),
     Int(i32),
