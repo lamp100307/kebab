@@ -1,7 +1,7 @@
-use regex::Regex;
+use core::error_trait::Span;
 use std::fmt::Display;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TokenType {
     Int,
     OP,
@@ -13,10 +13,11 @@ impl Display for TokenType {
     }
 }
 
-pub(crate) struct Token {
-    token_type: TokenType,
-    value: String,
-    regex: Regex,
+#[derive(Debug, Clone)]
+pub struct Token {
+    pub token_type: TokenType,
+    pub value: String,
+    pub span: Span,
 }
 
 impl Display for Token {

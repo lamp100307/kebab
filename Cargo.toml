@@ -3,4 +3,3 @@ name = "kebab"
 version = "0.0.0"
 
 [dependencies]
-regex = "1.5.5"
