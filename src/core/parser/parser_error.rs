@@ -17,8 +17,8 @@ pub enum ParserError {
 impl ErrorDisplay for ParserError {
     fn error_code(&self) -> &'static str {
         match self {
-            ParserError::TokenMismatch { .. } => "E0100",
-            ParserError::UnexpectedEOF { .. } => "E0101",
+            ParserError::TokenMismatch { .. } => "PA0001",
+            ParserError::UnexpectedEOF { .. } => "PA0002",
         }
     }
 
@@ -41,10 +41,6 @@ impl ErrorDisplay for ParserError {
             ParserError::TokenMismatch { suggestion, .. } => suggestion.clone(),
             _ => None
         }
-    }
-
-    fn notes(&self) -> Vec<String> {
-        vec![]
     }
 }
 

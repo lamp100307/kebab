@@ -8,12 +8,10 @@ pub struct Span {
 }
 
 pub trait ErrorDisplay {
-    // ? Why are these functions and not fields?
     fn error_code(&self) -> &'static str;
     fn error_title(&self) -> String;
     fn span(&self) -> &Span;
     fn help(&self) -> Option<String>;
-    fn notes(&self) -> Vec<String>;
 
     fn format_error(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
@@ -40,7 +38,7 @@ pub trait ErrorDisplay {
             line_num, span.source_snippet
         )?;
 
-        let pointer_padding = " ".repeat(span.start_col + 1);
+        let pointer_padding = " ".repeat(span.start_col);
         write!(f, "   \x1b[1;34m|\x1b[0m {}^\n", pointer_padding)?;
 
         write!(f, "   \x1b[1;34m|\x1b[0m\n")?;
@@ -51,10 +49,6 @@ pub trait ErrorDisplay {
                 "   \x1b[1;34m=\x1b[0m \x1b[1;33mhelp\x1b[0m: {}\n",
                 help_msg
             )?;
-        }
-
-        for note in self.notes() {
-            write!(f, "   \x1b[1;34m=\x1b[0m \x1b[1;33mnote\x1b[0m: {}\n", note)?;
         }
 
         Ok(())

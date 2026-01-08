@@ -13,7 +13,7 @@ pub enum LexerError {
 impl ErrorDisplay for LexerError {
     fn error_code(&self) -> &'static str {
         match self {
-            LexerError::InvalidChar { .. } => "E0001",
+            LexerError::InvalidChar { .. } => "LE0001",
         }
     }
 
@@ -33,10 +33,6 @@ impl ErrorDisplay for LexerError {
         match self {
             LexerError::InvalidChar { suggestion, .. } => suggestion.clone(),
         }
-    }
-
-    fn notes(&self) -> Vec<String> {
-        Vec::new()
     }
 }
 
