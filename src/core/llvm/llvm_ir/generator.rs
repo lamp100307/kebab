@@ -1,7 +1,21 @@
+//! LLVM IR generator
+//! LLVM - Low Level Virtual Machine
+//! IR - Intermediate Representation
+//!
+//! This module contains the LLVM IR generator implementation.
+//! It generates a LLVM IR code from a middle IR representation.
+//!
+//! # Usage
+//!
+//! To use this module, you need to create an instance of the `LlvmIrGenerator`
+//! and call the `generate_llvm_intermediate_representation` method.
+//! It takes a vector of middle IR nodes and returns a string containing the LLVM IR code.
+
 use super::super::middle_ir::mir_nodes::MirNode;
 use crate::core::llvm::middle_ir::mir_nodes::Dependency;
 
 pub struct LlvmIrGenerator {
+    /// Variable counter (roughly)
     stack: u32,
 }
 
@@ -10,6 +24,10 @@ impl LlvmIrGenerator {
         LlvmIrGenerator { stack: 0 }
     }
 
+    /// Generate LLVM IR from middle IR
+    /// # Arguments
+    /// * `ast`: [`MirNode`] - Vector of middle IR nodes
+    /// * `dependencies`: [`Vec<Dependency>`] - Vector of dependencies
     pub fn generate_llvm_intermediate_representation(
         &mut self,
         ast: Vec<MirNode>,
@@ -54,6 +72,7 @@ impl LlvmIrGenerator {
         match node {
             MirNode::I32(n) => n.to_string(),
             MirNode::Add { left, right } => {
+                //? Try to replace `&**` with `.as_ref()` (or just `&*`)
                 let left_val = self.gen_node(&**left, ir);
                 let right_val = self.gen_node(&**right, ir);
 
