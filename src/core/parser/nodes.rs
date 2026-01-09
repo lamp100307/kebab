@@ -7,6 +7,7 @@ pub enum AstNode {
         op: String,
         right: Box<AstNode>,
     },
+    Print(Box<AstNode>),
 }
 
 impl std::fmt::Display for AstNode {
@@ -15,6 +16,7 @@ impl std::fmt::Display for AstNode {
             AstNode::Program(nodes) => write!(f, "{:#?}", nodes),
             AstNode::Int(n) => write!(f, "{}", n),
             AstNode::Op { left, op, right } => write!(f, "({} {} {})", left, op, right),
+            AstNode::Print(node) => write!(f, "print {}", node),
         }
     }
 }
@@ -49,6 +51,7 @@ impl AstNode {
                     *self = AstNode::Int(result);
                 }
             }
+            AstNode::Print(node) => node.optimize(),
         }
     }
 }

@@ -53,6 +53,24 @@ pub fn lex(content: &str) -> Result<Vec<Token>, LexerError> {
                 });
                 col += 1;
             }
+            '(' => tokens.push(Token {
+                token_type: TokenType::LParen,
+                value: c.to_string(),
+                span: Span {
+                    start_line: line,
+                    start_col: col,
+                    source_snippet: content[pos..].chars().take(1).collect(),
+                },
+            }),
+            ')' => tokens.push(Token {
+                token_type: TokenType::RParen,
+                value: c.to_string(),
+                span: Span {
+                    start_line: line,
+                    start_col: col,
+                    source_snippet: content[pos..].chars().take(1).collect(),
+                },
+            }),
             '+' | '-' | '*' | '/' => {
                 let op = c.to_string();
                 col += 1;
@@ -65,6 +83,40 @@ pub fn lex(content: &str) -> Result<Vec<Token>, LexerError> {
                         source_snippet: content[pos..].chars().take(1).collect(),
                     },
                 })
+            }
+            'a'..='z' | 'A'..='Z' => {
+                let start_col = col;
+                let start_line = line;
+                let mut id = String::new();
+                id.push(c);
+
+                while let Some(&(_, next_c)) = chars.peek() {
+                    if next_c.is_ascii_alphanumeric() {
+                        id.push(next_c);
+                        col += 1;
+                        chars.next();
+                    } else {
+                        break;
+                    }
+                }
+
+                let mut types: TokenType = TokenType::Id;
+
+                match id.as_str() {
+                    "print" => types = TokenType::Keyword,
+                    _ => ()
+                }
+
+                tokens.push(Token {
+                    token_type: types,
+                    value: id.clone(),
+                    span: Span {
+                        start_line,
+                        start_col,
+                        source_snippet: content[pos..].chars().take(id.len()).collect(),
+                    },
+                });
+                col += 1;
             }
             _ => {
                 let line_start = content[..pos]

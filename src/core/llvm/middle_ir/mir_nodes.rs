@@ -1,4 +1,10 @@
 
+#[derive(Debug, PartialEq)]
+pub enum Dependency {
+    Printf,
+    IntFmt,
+}
+
 #[derive(Debug)]
 pub enum MirNode {
     I32(i32),
@@ -6,6 +12,7 @@ pub enum MirNode {
     Sub { left: Box<MirNode>, right: Box<MirNode> },
     Mul { left: Box<MirNode>, right: Box<MirNode> },
     Div { left: Box<MirNode>, right: Box<MirNode> },
+    Print { left: Box<MirNode> },
 }
 
 impl std::fmt::Display for MirNode {
@@ -16,6 +23,7 @@ impl std::fmt::Display for MirNode {
             MirNode::Sub { left, right } => write!(f, "({} - {})", left, right),
             MirNode::Mul { left, right } => write!(f, "({} * {})", left, right),
             MirNode::Div { left, right } => write!(f, "({} / {})", left, right),
+            MirNode::Print { left } => write!(f, "print({})", left),
         }
     }
 }

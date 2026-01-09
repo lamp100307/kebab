@@ -60,6 +60,7 @@ impl SemanticAnalyser {
                 }
                 Ok(())
             }
+            AstNode::Print(node) => Ok(self.analyse_node(&**node)?),
             _ => Err(SemanticError::UnsupportedASTNode {
                 node: node.clone(),
                 span: Span { //fixme :[

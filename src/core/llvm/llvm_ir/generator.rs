@@ -1,3 +1,4 @@
+use crate::core::llvm::middle_ir::mir_nodes::Dependency;
 use super::super::middle_ir::mir_nodes::MirNode;
 
 pub struct LlvmIrGenerator {
@@ -16,8 +17,21 @@ impl LlvmIrGenerator {
         format!("%var{}", self.stack)
     }
 
-    pub fn generate_llvm_ir(&mut self, ast: Vec<MirNode>) -> String {
+    pub fn generate_llvm_ir(&mut self, ast: Vec<MirNode>, dependencies: Vec<Dependency>) -> String {
         let mut ir = String::new();
+        //windows target
+        ir.push_str("target datalayout = \"e-m:e-i64:64-f80:128-n8:16:32:64-S128\"\n");
+        ir.push_str("target triple = \"x86_64-pc-windows-msvc19.44.35221\"\n");
+        for dep in dependencies {
+            match dep {
+                Dependency::Printf => {
+                    ir.push_str("declare i32 @printf(i8*, ...)\n");
+                }
+                Dependency::IntFmt => {
+                    ir.push_str("@int_fmt = private unnamed_addr constant [4 x i8] c\"%d\\0A\\00\"\n");
+                }
+            }
+        }
         ir.push_str("define i32 @main() {\n");
         ir.push_str("entry:\n");
 
@@ -72,6 +86,16 @@ impl LlvmIrGenerator {
 
                 ir.push_str(&format!("  {} = sdiv i32 {}, {}\n", temp_name, left_val, right_val).as_str());
                 temp_name
+            }
+            MirNode::Print { left } => {
+                let left_val = self.gen_node(&**left, ir);
+                match &**left {
+                    MirNode::I32(_) => {
+                        ir.push_str(&format!("  call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @int_fmt, i32 0, i32 0), i32 {})\n", left_val).as_str());
+                    }
+                    _ => ()
+                }
+                "".to_string()
             }
         }
     }

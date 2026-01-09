@@ -1,5 +1,23 @@
-use crate::core::llvm::middle_ir::mir_nodes::MirNode;
+use crate::core::llvm::middle_ir::mir_nodes::{Dependency, MirNode};
 use crate::core::parser::nodes::AstNode;
+
+pub fn get_dependencies(ast: &AstNode) -> Vec<Dependency> {
+    if let AstNode::Program(nodes) = ast {
+        let mut dependencies = Vec::new();
+        for node in nodes {
+            if let AstNode::Print(node) = node {
+                match **node {
+                    AstNode::Int(_) => dependencies.push(Dependency::IntFmt),
+                    _ => ()
+                }
+                dependencies.push(Dependency::Printf);
+            }
+        }
+        dependencies
+    } else {
+        panic!("Unsupported AST node in get_dependencies {}", ast);
+    }
+}
 
 pub fn make_middle_ir(ast: AstNode) -> Vec<MirNode> {
     if let AstNode::Program(nodes) = ast {
@@ -27,6 +45,11 @@ fn make_middle_ir_node(ast: &AstNode) -> MirNode {
                 _ => panic!("Unsupported operator in make_middle_ir_node {}", op),
             }
         }
+        AstNode::Print(node) => {
+            MirNode::Print {
+                left: Box::new(make_middle_ir_node(&**node)),
+            }
+        },
         _ => panic!("Unsupported AST node in make_middle_ir_node {}", ast),
     }
 }

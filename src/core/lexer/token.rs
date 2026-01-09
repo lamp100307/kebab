@@ -5,6 +5,10 @@ use std::fmt::Display;
 pub enum TokenType {
     Int,
     OP,
+    Keyword,
+    Id,
+    LParen,
+    RParen,
 }
 
 impl Display for TokenType {

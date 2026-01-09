@@ -105,6 +105,23 @@ impl Parser {
                 let num = str_num.value.parse::<i32>().unwrap();
                 Ok(AstNode::Int(num))
             }
+            TokenType::Keyword => {
+                match node.value.as_str() {
+                    "print" => {
+                        self.consume(TokenType::Keyword)?;
+                        self.consume(TokenType::LParen)?;
+                        let expr = self.parse_expr()?;
+                        self.consume(TokenType::RParen)?;
+                        Ok(AstNode::Print(Box::new(expr)))
+                    }
+                    _ => Err(ParserError::TokenMismatch {
+                        expected: TokenType::Keyword.to_string(),
+                        got: node.token_type.to_string(),
+                        span: node.span.clone(),
+                        suggestion: None
+                    })
+                }
+            }
             _ => Err(ParserError::TokenMismatch {
                 expected: TokenType::Int.to_string(),
                 got: node.token_type.to_string(),
