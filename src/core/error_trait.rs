@@ -1,5 +1,6 @@
 use std::fmt;
 
+/// Structure describes part of code
 #[derive(Debug, Clone)]
 pub struct Span {
     pub start_line: usize,
@@ -7,12 +8,15 @@ pub struct Span {
     pub source_snippet: String,
 }
 
+/// Trait for error display
+/// Error contains code snipper as [Span], error title, error code and help
 pub trait ErrorDisplay {
     fn error_code(&self) -> &'static str;
     fn error_title(&self) -> String;
     fn span(&self) -> &Span;
     fn help(&self) -> Option<String>;
 
+    /// Insert error info into [fmt::Formatter]
     fn format_error(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
@@ -21,6 +25,7 @@ pub trait ErrorDisplay {
             self.error_title()
         )?;
 
+        // for short
         let span = self.span();
 
         write!(
