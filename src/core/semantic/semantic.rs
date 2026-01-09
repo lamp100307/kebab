@@ -1,5 +1,5 @@
-use core::error_trait::Span;
-use core::parser::nodes::AstNode;
+use crate::core::error_trait::Span;
+use crate::core::parser::nodes::AstNode;
 use super::semantic_error::SemanticError;
 use super::vars::Type;
 

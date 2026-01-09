@@ -1,4 +1,4 @@
-use core::error_trait::Span;
+use crate::core::error_trait::Span;
 use super::token::{TokenType, Token};
 use super::lexer_error::LexerError;
 

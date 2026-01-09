@@ -1,5 +1,5 @@
-use core::llvm::middle_ir::mir_nodes::MirNode;
-use core::parser::nodes::AstNode;
+use crate::core::llvm::middle_ir::mir_nodes::MirNode;
+use crate::core::parser::nodes::AstNode;
 
 pub fn make_middle_ir(ast: AstNode) -> Vec<MirNode> {
     if let AstNode::Program(nodes) = ast {

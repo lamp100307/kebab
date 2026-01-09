@@ -1,5 +1,5 @@
-use core::parser::nodes::AstNode;
-use core::semantic::vars::Type;
+use crate::core::parser::nodes::AstNode;
+use crate::core::semantic::vars::Type;
 use crate::core::error_trait::{ErrorDisplay, Span };
 
 pub enum SemanticError {

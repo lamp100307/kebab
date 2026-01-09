@@ -1,7 +1,7 @@
-use core::error_trait::Span;
-use core::lexer::token::{Token, TokenType};
-use core::parser::nodes::AstNode;
-use core::parser::parser_error::ParserError;
+use crate::core::error_trait::Span;
+use crate::core::lexer::token::{Token, TokenType};
+use crate::core::parser::nodes::AstNode;
+use crate::core::parser::parser_error::ParserError;
 
 pub struct Parser {
     pos: usize,
