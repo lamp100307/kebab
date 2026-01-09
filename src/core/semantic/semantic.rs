@@ -1,17 +1,13 @@
 use core::error_trait::Span;
 use core::parser::nodes::AstNode;
 use super::semantic_error::SemanticError;
-use super::vars::{ Var, Type };
+use super::vars::Type;
 
-pub struct SemanticAnalyser {
-    pub vars: Vec<Var>
-}
+pub struct SemanticAnalyser; //vars in plans
 
 impl SemanticAnalyser {
     pub fn new() -> SemanticAnalyser {
-        SemanticAnalyser {
-            vars: Vec::new()
-        }
+        SemanticAnalyser
     }
 
     fn get_node_type(&self, node: &AstNode) -> Result<Type, SemanticError> {

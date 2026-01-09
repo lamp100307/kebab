@@ -3,11 +3,6 @@ use core::semantic::vars::Type;
 use crate::core::error_trait::{ErrorDisplay, Span };
 
 pub enum SemanticError {
-    VariableNotFound {
-        name: String,
-        span: Span,
-        suggestion: Option<String>
-    },
     TypeMismatch {
         left: Type,
         right: Type,
@@ -22,23 +17,20 @@ pub enum SemanticError {
 impl ErrorDisplay for SemanticError {
     fn error_code(&self) -> &'static str {
         match self {
-            SemanticError::VariableNotFound { .. } => "SE0001",
-            SemanticError::TypeMismatch { .. } => "SE0002",
-            SemanticError::UnsupportedASTNode { .. } => "SE0003",
+            SemanticError::TypeMismatch { .. } => "SE0001",
+            SemanticError::UnsupportedASTNode { .. } => "SE0002",
         }
     }
 
     fn error_title(&self) -> String {
         match self {
-            SemanticError::VariableNotFound { .. } => "Variable Not Found".to_string(),
-            SemanticError::TypeMismatch { .. } => "Type Mismatch".to_string(),
-            SemanticError::UnsupportedASTNode { .. } => "Unsupported AST Node".to_string(),
+            SemanticError::TypeMismatch { left, right, .. } => format!("Type Mismatch, left: {}, right: {}", left, right),
+            SemanticError::UnsupportedASTNode { node, .. } => format!("Unsupported AST Node: {}", node),
         }
     }
 
     fn span(&self) -> &Span {
         match self {
-            SemanticError::VariableNotFound { span, .. } => span,
             SemanticError::TypeMismatch { span, .. } => span,
             SemanticError::UnsupportedASTNode { span, .. } => span
         }
@@ -46,7 +38,6 @@ impl ErrorDisplay for SemanticError {
 
     fn help(&self) -> Option<String> {
         match self {
-            SemanticError::VariableNotFound { suggestion, .. } => suggestion.clone(),
             _ => None
         }
     }

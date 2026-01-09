@@ -1,15 +1,13 @@
 use super::super::middle_ir::mir_nodes::MirNode;
 
 pub struct LlvmIrGenerator {
-    stack: u32,
-    temp_counter: u32,
+    stack: u32
 }
 
 impl LlvmIrGenerator {
     pub fn new() -> LlvmIrGenerator {
         LlvmIrGenerator {
-            stack: 0,
-            temp_counter: 0,
+            stack: 0
         }
     }
 
@@ -74,10 +72,6 @@ impl LlvmIrGenerator {
 
                 ir.push_str(&format!("  {} = sdiv i32 {}, {}\n", temp_name, left_val, right_val).as_str());
                 temp_name
-            }
-            _ => {
-                ir.push_str(&format!("  ; Unsupported node: {:?}\n", node).as_str());
-                "0".to_string()
             }
         }
     }

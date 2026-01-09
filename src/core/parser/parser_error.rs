@@ -24,7 +24,7 @@ impl ErrorDisplay for ParserError {
 
     fn error_title(&self) -> String {
         match self {
-            ParserError::TokenMismatch { .. } => "Token Mismatch".to_string(),
+            ParserError::TokenMismatch { expected, got, .. } => format!("Token Mismatch: expected: {}, got: {}", expected, got),
             ParserError::UnexpectedEOF { .. } => "Unexpected EOF".to_string(),
         }
     }
