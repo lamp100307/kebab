@@ -27,7 +27,7 @@ impl Parser {
                     expected: token_type.to_string(),
                     got: token.token_type.to_string(),
                     span: token.span.clone(),
-                    suggestion: None
+                    suggestion: None,
                 })
             }
         } else {
@@ -61,10 +61,10 @@ impl Parser {
                 left = AstNode::Op {
                     op: token.value,
                     left: Box::new(left),
-                    right: Box::new(right)
+                    right: Box::new(right),
                 };
             } else {
-                break
+                break;
             }
         }
         Ok(left)
@@ -82,10 +82,10 @@ impl Parser {
                 left = AstNode::Op {
                     op: token.value,
                     left: Box::new(left),
-                    right: Box::new(right)
+                    right: Box::new(right),
                 };
             } else {
-                break
+                break;
             }
         }
         Ok(left)
@@ -97,7 +97,7 @@ impl Parser {
                 start_line: 0,
                 start_col: 0,
                 source_snippet: "".to_string(),
-            }
+            },
         })?;
         match node.token_type {
             TokenType::Int => {
@@ -105,29 +105,27 @@ impl Parser {
                 let num = str_num.value.parse::<i32>().unwrap();
                 Ok(AstNode::Int(num))
             }
-            TokenType::Keyword => {
-                match node.value.as_str() {
-                    "print" => {
-                        self.consume(TokenType::Keyword)?;
-                        self.consume(TokenType::LParen)?;
-                        let expr = self.parse_expr()?;
-                        self.consume(TokenType::RParen)?;
-                        Ok(AstNode::Print(Box::new(expr)))
-                    }
-                    _ => Err(ParserError::TokenMismatch {
-                        expected: TokenType::Keyword.to_string(),
-                        got: node.token_type.to_string(),
-                        span: node.span.clone(),
-                        suggestion: None
-                    })
+            TokenType::Keyword => match node.value.as_str() {
+                "print" => {
+                    self.consume(TokenType::Keyword)?;
+                    self.consume(TokenType::LParen)?;
+                    let expr = self.parse_expr()?;
+                    self.consume(TokenType::RParen)?;
+                    Ok(AstNode::Print(Box::new(expr)))
                 }
-            }
+                _ => Err(ParserError::TokenMismatch {
+                    expected: TokenType::Keyword.to_string(),
+                    got: node.token_type.to_string(),
+                    span: node.span.clone(),
+                    suggestion: None,
+                }),
+            },
             _ => Err(ParserError::TokenMismatch {
                 expected: TokenType::Int.to_string(),
                 got: node.token_type.to_string(),
                 span: node.span.clone(),
-                suggestion: None
-            })
+                suggestion: None,
+            }),
         }
     }
 }

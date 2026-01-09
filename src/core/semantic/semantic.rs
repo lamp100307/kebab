@@ -1,9 +1,9 @@
-use crate::core::error_trait::Span;
-use crate::core::parser::nodes::AstNode;
 use super::semantic_error::SemanticError;
 use super::vars::Type;
+use crate::core::error_trait::Span;
+use crate::core::parser::nodes::AstNode;
 
-pub struct SemanticAnalyser; //vars in plans
+pub struct SemanticAnalyser; // vars in plans
 
 impl SemanticAnalyser {
     pub fn new() -> SemanticAnalyser {
@@ -15,11 +15,12 @@ impl SemanticAnalyser {
             AstNode::Int(_) => Ok(Type::Int),
             _ => Err(SemanticError::UnsupportedASTNode {
                 node: node.clone(),
-                span: Span { //fixme :[
+                span: Span {
+                    // TODO fixme
                     start_col: 0,
                     start_line: 0,
-                    source_snippet: "".to_string()
-                }
+                    source_snippet: "".to_string(),
+                },
             }),
         }
     }
@@ -28,7 +29,7 @@ impl SemanticAnalyser {
         match (types1.as_str(), self.get_node_type(&*value)?.as_str()) {
             ("Int", "Int") => Ok(true),
             ("Str", "Str") => Ok(true),
-            (_, _) => Ok(false)
+            (_, _) => Ok(false),
         }
     }
 
@@ -51,11 +52,12 @@ impl SemanticAnalyser {
                     Err(SemanticError::TypeMismatch {
                         left: self.get_node_type(&**left)?,
                         right: self.get_node_type(&**right)?,
-                        span: Span { //fixme :[
+                        span: Span {
+                            // TODO fixme
                             start_col: 0,
                             start_line: 0,
-                            source_snippet: "".to_string()
-                        }
+                            source_snippet: "".to_string(),
+                        },
                     })?;
                 }
                 Ok(())
@@ -63,12 +65,13 @@ impl SemanticAnalyser {
             AstNode::Print(node) => Ok(self.analyse_node(&**node)?),
             _ => Err(SemanticError::UnsupportedASTNode {
                 node: node.clone(),
-                span: Span { //fixme :[
+                span: Span {
+                    // TODO fixme
                     start_col: 0,
                     start_line: 0,
-                    source_snippet: "".to_string()
-                }
-            })?
+                    source_snippet: "".to_string(),
+                },
+            })?,
         }
     }
 }

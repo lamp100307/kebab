@@ -1,17 +1,10 @@
+use crate::core::error_trait::{ErrorDisplay, Span};
 use crate::core::parser::nodes::AstNode;
 use crate::core::semantic::vars::Type;
-use crate::core::error_trait::{ErrorDisplay, Span };
 
 pub enum SemanticError {
-    TypeMismatch {
-        left: Type,
-        right: Type,
-        span: Span
-    },
-    UnsupportedASTNode {
-        node: AstNode,
-        span: Span
-    }
+    TypeMismatch { left: Type, right: Type, span: Span },
+    UnsupportedASTNode { node: AstNode, span: Span },
 }
 
 impl ErrorDisplay for SemanticError {
@@ -24,21 +17,25 @@ impl ErrorDisplay for SemanticError {
 
     fn error_title(&self) -> String {
         match self {
-            SemanticError::TypeMismatch { left, right, .. } => format!("Type Mismatch, left: {}, right: {}", left, right),
-            SemanticError::UnsupportedASTNode { node, .. } => format!("Unsupported AST Node: {}", node),
+            SemanticError::TypeMismatch { left, right, .. } => {
+                format!("Type Mismatch, left: {}, right: {}", left, right)
+            }
+            SemanticError::UnsupportedASTNode { node, .. } => {
+                format!("Unsupported AST Node: {}", node)
+            }
         }
     }
 
     fn span(&self) -> &Span {
         match self {
             SemanticError::TypeMismatch { span, .. } => span,
-            SemanticError::UnsupportedASTNode { span, .. } => span
+            SemanticError::UnsupportedASTNode { span, .. } => span,
         }
     }
 
     fn help(&self) -> Option<String> {
         match self {
-            _ => None
+            _ => None,
         }
     }
 }

@@ -1,12 +1,12 @@
-use crate::core::error_trait::Span;
 use crate::core::error_trait::ErrorDisplay;
+use crate::core::error_trait::Span;
 
 #[derive(Debug)]
 pub enum LexerError {
     InvalidChar {
         char: char,
         span: Span,
-        suggestion: Option<String>
+        suggestion: Option<String>,
     },
 }
 

@@ -1,16 +1,16 @@
 mod core;
 
-use std::process::{ Command, exit };
-use std::fs::{read_to_string, write, remove_file, File, create_dir_all, rename, remove_dir_all};
+use std::fs::{File, read_to_string, remove_file, write};
+use std::process::{Command, exit};
 
-use which::which;
 use reqwest::blocking;
+use which::which;
 
 use core::lexer::lexer::lex;
+use core::llvm::llvm_ir::generator::LlvmIrGenerator;
+use core::llvm::middle_ir::mir_maker::{get_dependencies, make_middle_ir};
 use core::parser::parser::Parser;
 use core::semantic::semantic::SemanticAnalyser;
-use core::llvm::middle_ir::mir_maker::{ make_middle_ir, get_dependencies };
-use core::llvm::llvm_ir::generator::LlvmIrGenerator;
 
 fn download_portable_clang() -> Result<(), Box<dyn std::error::Error>> {
     println!("📦 Downloading Clang...");
@@ -68,7 +68,7 @@ fn main() {
                 println!("AST: {:#?}", ast);
             }
             ast
-        },
+        }
         Err(e) => {
             eprintln!("{}", e);
             exit(1);
@@ -99,7 +99,7 @@ fn main() {
     }
 
     let mut generator = LlvmIrGenerator::new();
-    let llvm_ir = generator.generate_llvm_ir(mir, dependencies);
+    let llvm_ir = generator.generate_llvm_intermediate_representation(mir, dependencies);
 
     if debug {
         println!("LLVM IR: \n{}", llvm_ir);
@@ -110,7 +110,7 @@ fn main() {
 
     let output_file = format!("{}.exe", file);
 
-    //compiling and running
+    // compiling and running
     let output = Command::new("clang")
         .arg(&llvm_file)
         .arg("-O3")

@@ -1,6 +1,6 @@
-use crate::core::error_trait::Span;
-use super::token::{TokenType, Token};
 use super::lexer_error::LexerError;
+use super::token::{Token, TokenType};
+use crate::core::error_trait::Span;
 
 pub fn lex(content: &str) -> Result<Vec<Token>, LexerError> {
     let mut tokens = Vec::new();
@@ -15,7 +15,11 @@ pub fn lex(content: &str) -> Result<Vec<Token>, LexerError> {
                 col = 1;
             }
             '\r' => {
-                if chars.peek().map(|(_, next_c)| *next_c == '\n').unwrap_or(false) {
+                if chars
+                    .peek()
+                    .map(|(_, next_c)| *next_c == '\n')
+                    .unwrap_or(false)
+                {
                     chars.next();
                     line += 1;
                     col = 1;
@@ -104,7 +108,7 @@ pub fn lex(content: &str) -> Result<Vec<Token>, LexerError> {
 
                 match id.as_str() {
                     "print" => types = TokenType::Keyword,
-                    _ => ()
+                    _ => (),
                 }
 
                 tokens.push(Token {
@@ -119,10 +123,7 @@ pub fn lex(content: &str) -> Result<Vec<Token>, LexerError> {
                 col += 1;
             }
             _ => {
-                let line_start = content[..pos]
-                    .rfind('\n')
-                    .map(|i| i + 1)
-                    .unwrap_or(0);
+                let line_start = content[..pos].rfind('\n').map(|i| i + 1).unwrap_or(0);
 
                 let line_end = content[pos..]
                     .find('\n')
@@ -139,7 +140,7 @@ pub fn lex(content: &str) -> Result<Vec<Token>, LexerError> {
                     suggestion: {
                         match c {
                             ';' => Some("Remove this semicolon".to_string()),
-                            _ => None
+                            _ => None,
                         }
                     },
                 });

@@ -1,5 +1,5 @@
 pub enum Type {
-    Int
+    Int,
 }
 
 impl std::fmt::Display for Type {
@@ -11,7 +11,7 @@ impl std::fmt::Display for Type {
 impl Type {
     pub fn as_str(&self) -> &str {
         match self {
-            Type::Int => "Int"
+            Type::Int => "Int",
         }
     }
 }
@@ -21,4 +21,3 @@ impl Type {
 //     value: String,
 //     var_type: Type
 // }
-
