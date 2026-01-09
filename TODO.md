@@ -15,6 +15,7 @@
 - [ ] generators
 
 ## Error codes
+
 LE0000 - Lexer error
 PA0000 - Parser error
 SE0000 - Semantic error
