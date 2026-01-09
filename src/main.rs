@@ -1,11 +1,10 @@
 mod core;
-extern crate regex;
 
 use core::lexer::lexer::lex;
-use core::llvm::context::context_maker::{Context, Dependencies};
-use core::llvm::llvm_ir::generator::IrGenerator;
 use core::parser::parser::Parser;
 use core::semantic::semantic::SemanticAnalyser;
+use core::llvm::middle_ir::mir_maker::make_middle_ir;
+use core::llvm::llvm_ir::generator::LlvmIrGenerator;
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
@@ -33,30 +32,37 @@ fn main() {
         }
     };
 
-    let ast = match Parser::new(tokens).parse() {
-        Ok(ast) => {
-            if debug {
-                println!("{:#?}", ast);
-            };
-            ast
-        }
+    let mut parser = Parser::new(tokens);
+    let mut ast = match parser.parse() {
+        Ok(ast) => ast,
         Err(e) => {
             eprintln!("{}", e);
             std::process::exit(1);
         }
     };
 
-    let mut semantic_analyser = SemanticAnalyser::new();
-    match semantic_analyser.analyse(ast.clone()) {
-        Ok(_) => (),
+    println!("{}", ast);
+
+    ast.optimize();
+
+    println!("{}", ast);
+
+    let mut semantic = SemanticAnalyser::new();
+
+    match semantic.analyse(&ast) {
+        Ok(()) => println!("Semantic analysis successful!"),
         Err(e) => {
             eprintln!("{}", e);
             std::process::exit(1);
         }
     }
-    let mut context_maker = Context::new();
-    let ir = context_maker.translate_ast(ast);
 
-    let mut ir_generator = IrGenerator::new(vec![ir], context_maker.dependencies.clone());
-    let ir = ir_generator.gen_ir();
+    let mir = make_middle_ir(ast);
+
+    println!("{:#?}", mir);
+
+    let mut generator = LlvmIrGenerator::new();
+    let llvm_ir = generator.generate_llvm_ir(mir);
+
+    println!("{}", llvm_ir);
 }
