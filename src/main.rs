@@ -1,6 +1,6 @@
 mod core;
 
-use std::fs::{File, read_to_string, remove_file, write};
+use std::fs::{ read_to_string, remove_file, write};
 use std::path::Path;
 use std::process::{Command, exit};
 
@@ -9,7 +9,9 @@ use core::llvm::llvm_ir::generator::LlvmIrGenerator;
 use core::llvm::middle_ir::mir_maker::{get_dependencies, make_middle_ir};
 use core::parser::parser::Parser;
 use core::semantic::semantic::SemanticAnalyser;
-use core::utils::clang_installer::resolve_clang;
+use core::utils::clang_installer::{resolve_clang};
+use core::utils::args_parser::{parse_args, ArgType};
+use core::utils::toml_parser::parse_toml;
 
 fn main() {
     match resolve_clang() {
@@ -23,16 +25,32 @@ fn main() {
     let args: Vec<String> = std::env::args().collect();
     if args.len() < 2 {
         eprintln!("Expected at least one argument");
-        eprintln!("Usage: {} <filename> [debug]", args[0]);
+        eprintln!("Usage: {} <command> [project-path] [debug]", args[0]);
         return;
     }
 
-    let file = &args[1];
-    let file_path = Path::new(file);
+    let (command, args) = parse_args(args[1..].to_vec());
+    let debug = match args.iter().find(|arg| arg.arg_type == ArgType::Debug) {
+        Some(arg) => arg.value.as_ref().unwrap() == "true",
+        None => false,
+    };
 
-    let debug = args.get(2).map(|arg| arg == "debug").unwrap_or(false);
+    let project_path = match args.iter().find(|arg| arg.arg_type == ArgType::Path) {
+        Some(arg) => Path::new(arg.value.as_ref().unwrap()),
+        None => Path::new("."),
+    };
 
-    let contents = read_to_string(file_path).expect("Something went wrong reading the file");
+    let project = match parse_toml(project_path.to_str().unwrap() + "/kebab.toml") {
+        Ok(project) => project,
+        Err(e) => {
+            eprintln!("{}", e);
+            exit(1);
+        }
+    };
+
+    let file = project.entry;
+    let file_path = Path::new(&file);
+    let contents = read_to_string(file).unwrap();
 
     let tokens = match lex(&contents) {
         Ok(tokens) => {
