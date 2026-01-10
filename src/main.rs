@@ -10,7 +10,7 @@ use core::lexer::lexer::lex;
 use core::llvm::llvm_ir::generator::LlvmIrGenerator;
 use core::llvm::middle_ir::mir_maker::{get_dependencies, make_middle_ir};
 use core::parser::parser::Parser;
-use core::semantic::semantic::SemanticAnalyser;
+use core::semantic::semantic::SemanticAnalyzer;
 
 fn download_portable_clang() -> Result<(), Box<dyn std::error::Error>> {
     println!("📦 Downloading Clang...");
@@ -86,9 +86,9 @@ fn main() {
     }
 
     // semantic analysis
-    let mut semantic = SemanticAnalyser::new();
+    let mut semantic = SemanticAnalyzer::new();
 
-    match semantic.analyse(&ast) {
+    match semantic.analyze(&ast) {
         Ok(()) => (),
         Err(e) => {
             eprintln!("{}", e);

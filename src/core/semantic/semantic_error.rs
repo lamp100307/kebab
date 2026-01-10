@@ -1,10 +1,32 @@
+//! Enum of semantic errors
+//! Semantic errors looks like `SExxxx` where `xxxx` is error code
+//!
+//! # Error codes:
+//! SE0001 [`SemanticError::TypeMismatch`] - Type Mismatch
+//! SE0002 [`SemanticError::UnsupportedASTNode`] - Unsupported AST Node
+
 use crate::core::error_trait::{ErrorDisplay, Span};
 use crate::core::parser::nodes::AstNode;
 use crate::core::semantic::vars::Type;
 
 pub enum SemanticError {
-    TypeMismatch { left: Type, right: Type, span: Span },
-    UnsupportedASTNode { node: AstNode, span: Span },
+    /// [SE0001] Type Mismatch:
+    ///     left: Type::Int("2")
+    ///     right: Type::Str("2")
+    ///   |
+    /// 1 | print(2 + "2")
+    ///   |            ^
+    ///
+    /// help: maybe "2" should be converted to Type::Int
+    TypeMismatch {
+        left: Type,
+        right: Type,
+        span: Span,
+    },
+    UnsupportedASTNode {
+        node: AstNode,
+        span: Span,
+    },
 }
 
 impl ErrorDisplay for SemanticError {
@@ -18,7 +40,7 @@ impl ErrorDisplay for SemanticError {
     fn error_title(&self) -> String {
         match self {
             SemanticError::TypeMismatch { left, right, .. } => {
-                format!("Type Mismatch, left: {}, right: {}", left, right)
+                format!("Type Mismatch:\n\tleft: {}\n\tright: {}", left, right)
             }
             SemanticError::UnsupportedASTNode { node, .. } => {
                 format!("Unsupported AST Node: {}", node)
