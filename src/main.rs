@@ -1,41 +1,24 @@
 mod core;
 
-use std::process::{ Command, exit };
-use std::fs::{read_to_string, write, remove_file, File, create_dir_all, rename, remove_dir_all};
-
-use which::which;
-use reqwest::blocking;
+use std::fs::{read_to_string, remove_file, write};
+use std::process::{Command, exit};
 
 use core::lexer::lexer::lex;
+use core::llvm::llvm_ir::generator::LlvmIrGenerator;
+use core::llvm::middle_ir::mir_maker::{get_dependencies, make_middle_ir};
 use core::parser::parser::Parser;
 use core::semantic::semantic::SemanticAnalyser;
-use core::llvm::middle_ir::mir_maker::{ make_middle_ir, get_dependencies };
-use core::llvm::llvm_ir::generator::LlvmIrGenerator;
-
-fn download_portable_clang() -> Result<(), Box<dyn std::error::Error>> {
-    println!("📦 Downloading Clang...");
-
-    let url = "https://github.com/lamp100307/KebabBack/releases/download/clang/clang.exe";
-    let file_path = "clang.exe";
-
-    let mut response = blocking::get(url)?;
-    let mut file = File::create(file_path)?;
-    std::io::copy(&mut response, &mut file)?;
-
-    println!("✅ Portable Clang ready!");
-    Ok(())
-}
+use core::utils::clang_installer::resolve_clang;
 
 fn main() {
-    if !which("clang").is_ok() || which("clang.exe").is_ok() {
-        match download_portable_clang() {
-            Ok(_) => (),
-            Err(e) => {
-                eprintln!("Failed to download portable Clang: {}", e);
-                exit(1);
-            }
+    match resolve_clang() {
+        Ok(_) => {}
+        Err(e) => {
+            eprintln!("Failed to download the portable Clang: {}", e);
+            exit(1);
         }
     }
+
     let args: Vec<String> = std::env::args().collect();
     if args.len() < 2 {
         eprintln!("Expected at least one argument");
@@ -46,7 +29,7 @@ fn main() {
     let file = &args[1];
     let debug = args.get(2).map(|arg| arg == "debug").unwrap_or(false);
 
-    let contents = read_to_string(file).expect("Something went wrong reading the file");
+    let contents = read_to_string(file).expect("Something went wrong when reading the file");
 
     let tokens = match lex(&contents) {
         Ok(tokens) => {
@@ -68,7 +51,7 @@ fn main() {
                 println!("AST: {:#?}", ast);
             }
             ast
-        },
+        }
         Err(e) => {
             eprintln!("{}", e);
             exit(1);
