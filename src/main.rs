@@ -36,6 +36,8 @@ fn main() {
             }
         }
     }
+
+    // work with args
     let args: Vec<String> = std::env::args().collect();
     if args.len() < 2 {
         eprintln!("Expected at least one argument");
@@ -46,6 +48,7 @@ fn main() {
     let file = &args[1];
     let debug = args.get(2).map(|arg| arg == "debug").unwrap_or(false);
 
+    // read file
     let contents = read_to_string(file).expect("Something went wrong reading the file");
 
     let tokens = match lex(&contents) {
@@ -61,6 +64,7 @@ fn main() {
         }
     };
 
+    // create AST
     let mut parser = Parser::new(tokens);
     let mut ast = match parser.parse() {
         Ok(ast) => {
@@ -81,6 +85,7 @@ fn main() {
         println!("Optimized AST: {:#?}", ast);
     }
 
+    // semantic analysis
     let mut semantic = SemanticAnalyser::new();
 
     match semantic.analyse(&ast) {
@@ -91,6 +96,7 @@ fn main() {
         }
     }
 
+    // MIR
     let dependencies = get_dependencies(&ast);
     let mir = make_middle_ir(ast);
 
@@ -98,6 +104,7 @@ fn main() {
         println!("Middle IR: {:#?}", mir);
     }
 
+    // IR
     let mut generator = LlvmIrGenerator::new();
     let llvm_ir = generator.generate_llvm_intermediate_representation(mir, dependencies);
 
@@ -105,12 +112,13 @@ fn main() {
         println!("LLVM IR: \n{}", llvm_ir);
     }
 
+    // create the temp file with ir code
     let llvm_file = format!("{}.ll", file);
     write(&llvm_file, llvm_ir.clone()).unwrap();
 
+    // write to the final file
     let output_file = format!("{}.exe", file);
 
-    // compiling and running
     let output = Command::new("clang")
         .arg(&llvm_file)
         .arg("-O3")
@@ -139,5 +147,6 @@ fn main() {
         println!("{}", String::from_utf8_lossy(&output.stdout));
     }
 
+    // remove temp file
     remove_file(llvm_file).unwrap();
 }
