@@ -1,6 +1,7 @@
 mod core;
 
-use std::fs::{read_to_string, remove_file, write};
+use std::fs::{File, read_to_string, remove_file, write};
+use std::path::Path;
 use std::process::{Command, exit};
 
 use core::lexer::lexer::lex;
@@ -27,9 +28,11 @@ fn main() {
     }
 
     let file = &args[1];
+    let file_path = Path::new(file);
+
     let debug = args.get(2).map(|arg| arg == "debug").unwrap_or(false);
 
-    let contents = read_to_string(file).expect("Something went wrong when reading the file");
+    let contents = read_to_string(file_path).expect("Something went wrong reading the file");
 
     let tokens = match lex(&contents) {
         Ok(tokens) => {
@@ -88,10 +91,10 @@ fn main() {
         println!("LLVM IR: \n{}", llvm_ir);
     }
 
-    let llvm_file = format!("{}.ll", file);
+    let llvm_file = file_path.with_extension("ll");
     write(&llvm_file, llvm_ir.clone()).unwrap();
 
-    let output_file = format!("{}.exe", file);
+    let output_file = file_path.with_extension("exe");
 
     //compiling and running
     let output = Command::new("clang")
