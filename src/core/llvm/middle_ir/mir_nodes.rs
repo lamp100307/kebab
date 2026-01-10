@@ -1,3 +1,5 @@
+//! MIR - middle intermediate representation
+
 #[derive(Debug, PartialEq)]
 pub enum Dependency {
     Printf,

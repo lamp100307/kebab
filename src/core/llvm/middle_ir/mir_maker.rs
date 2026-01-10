@@ -1,6 +1,21 @@
+//! Dependency - mechanism works like "if it uses in source code, it will be added to ir code".
+//!
+//! # Examples
+//! ```kebab
+//! print(2+2);
+//! ```
+//!
+//! Because of we use `print` function, compiler will add follows string at the start to ir code:
+//!
+//! ```llvm
+//! @int_fmt = private unnamed_addr constant [4 x i8] c"%d\0A\00"
+//! declare i32 @printf(i8*, ...)
+//! ```
+
 use crate::core::llvm::middle_ir::mir_nodes::{Dependency, MirNode};
 use crate::core::parser::nodes::AstNode;
 
+/// Finds all dependencies in source code
 pub fn get_dependencies(ast: &AstNode) -> Vec<Dependency> {
     if let AstNode::Program(nodes) = ast {
         let mut dependencies = Vec::new();
@@ -19,6 +34,7 @@ pub fn get_dependencies(ast: &AstNode) -> Vec<Dependency> {
     }
 }
 
+/// Converts AST to MIR
 pub fn make_middle_ir(ast: AstNode) -> Vec<MirNode> {
     if let AstNode::Program(nodes) = ast {
         let mut mir_nodes = Vec::new();
@@ -31,6 +47,7 @@ pub fn make_middle_ir(ast: AstNode) -> Vec<MirNode> {
     }
 }
 
+/// Converts AST node to MIR node
 fn make_middle_ir_node(ast: &AstNode) -> MirNode {
     match ast {
         AstNode::Int(n) => MirNode::I32(*n),
