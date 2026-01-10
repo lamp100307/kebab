@@ -1,10 +1,8 @@
 mod core;
 
-use std::fs::{File, read_to_string, remove_file, write};
+use std::fs::{read_to_string, remove_file, write};
 use std::path::Path;
 use std::process::{Command, exit};
-
-use reqwest::blocking;
 
 use core::lexer::lexer::lex;
 use core::llvm::llvm_ir::generator::LlvmIrGenerator;
