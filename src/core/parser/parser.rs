@@ -1,7 +1,31 @@
+//! Parser - converts tokens to AST
+//! AST - Abstract Syntax Tree
+//!
+//! # Example:
+//!
+//! ```kebab
+//! print(2 * 3)
+//! ```
+//!
+//! will be converted to
+//!
+//! ```rust
+//! AST: Program(
+//!     [
+//!         Print(
+//!             Op {
+//!                 left: Int(2),
+//!                 op: "*",
+//!                 right: Int(3),
+//!             },
+//!         ),
+//!     ],
+//! )
+//! ```
+
 use crate::core::error_trait::Span;
 use crate::core::lexer::token::{Token, TokenType};
-use crate::core::parser::nodes::AstNode;
-use crate::core::parser::parser_error::ParserError;
+use crate::core::parser::{nodes::AstNode, parser_error::ParserError};
 
 pub struct Parser {
     pos: usize,
@@ -13,40 +37,44 @@ impl Parser {
         Parser { pos: 0, tokens }
     }
 
+    /// Parse the tokens into an AST
+    pub fn parse(&mut self) -> Result<AstNode, ParserError> {
+        let mut ast = Vec::new();
+        while self.pos < self.tokens.len() {
+            ast.push(self.parse_expr()?);
+        }
+        Ok(AstNode::Program(ast))
+    }
+
     fn peek(&self) -> Option<Token> {
         self.tokens.get(self.pos).cloned()
     }
 
-    fn consume(&mut self, token_type: TokenType) -> Result<Token, ParserError> {
+    /// Takes a token and checks if it matches the expected token type
+    /// Also checks if the end of the tokens has been reached
+    fn consume(&mut self, expected_token_type: TokenType) -> Result<Token, ParserError> {
         if let Some(token) = self.peek() {
-            if token.token_type == token_type {
+            if token.token_type == expected_token_type {
                 self.pos += 1;
                 Ok(token)
             } else {
                 Err(ParserError::TokenMismatch {
-                    expected: token_type.to_string(),
-                    got: token.token_type.to_string(),
+                    expected: expected_token_type,
+                    got: token.token_type,
                     span: token.span.clone(),
-                    suggestion: None,
+                    help: None,
                 })
             }
         } else {
             Err(ParserError::UnexpectedEOF {
                 span: Span {
+                    // TODO fixme
                     start_line: 0,
                     start_col: 0,
                     source_snippet: "".to_string(),
                 },
             })
         }
-    }
-
-    pub(crate) fn parse(&mut self) -> Result<AstNode, ParserError> {
-        let mut ast = Vec::new();
-        while self.pos < self.tokens.len() {
-            ast.push(self.parse_expr()?);
-        }
-        Ok(AstNode::Program(ast))
     }
 
     fn parse_expr(&mut self) -> Result<AstNode, ParserError> {
@@ -94,6 +122,7 @@ impl Parser {
     fn parse_factor(&mut self) -> Result<AstNode, ParserError> {
         let node = self.peek().ok_or(ParserError::UnexpectedEOF {
             span: Span {
+                // TODO fixme
                 start_line: 0,
                 start_col: 0,
                 source_snippet: "".to_string(),
@@ -114,17 +143,17 @@ impl Parser {
                     Ok(AstNode::Print(Box::new(expr)))
                 }
                 _ => Err(ParserError::TokenMismatch {
-                    expected: TokenType::Keyword.to_string(),
-                    got: node.token_type.to_string(),
+                    expected: TokenType::Keyword,
+                    got: node.token_type,
                     span: node.span.clone(),
-                    suggestion: None,
+                    help: None,
                 }),
             },
             _ => Err(ParserError::TokenMismatch {
-                expected: TokenType::Int.to_string(),
-                got: node.token_type.to_string(),
+                expected: TokenType::Int,
+                got: node.token_type,
                 span: node.span.clone(),
-                suggestion: None,
+                help: None,
             }),
         }
     }
