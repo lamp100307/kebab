@@ -40,12 +40,13 @@ Besides the fact that this code is the same in meaning, it is also the same in e
 
 🐍 - interpreted | ⚡️ - compiled
 
-## Installation
+## Installation and usage
 
 1. Download the release 1.0.0 beta or the latest one that will be available on [GitHub](https://github.com/lamp100307/kebab)
 2. Add to PATH
-3. Run `kebab new <project_name>`
-4. Programming and enjoy!
+3. Create project: `kebab new <project_name>`
+4. Compile to executable: `kebab <file_name>.keb`
+5. Run the executable file!
 
 ### Build from source code
 
@@ -54,7 +55,7 @@ Requirements: `rustc`
 ```bash
 git clone https://github.com/lamp100307/kebab.git
 cd kebab
-cargo build
+cargo build --release
 ```
 
 ## Links

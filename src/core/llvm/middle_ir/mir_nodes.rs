@@ -1,3 +1,4 @@
+//! MIR - middle intermediate representation
 
 #[derive(Debug, PartialEq)]
 pub enum Dependency {
@@ -8,11 +9,25 @@ pub enum Dependency {
 #[derive(Debug)]
 pub enum MirNode {
     I32(i32),
-    Add { left: Box<MirNode>, right: Box<MirNode> },
-    Sub { left: Box<MirNode>, right: Box<MirNode> },
-    Mul { left: Box<MirNode>, right: Box<MirNode> },
-    Div { left: Box<MirNode>, right: Box<MirNode> },
-    Print { left: Box<MirNode> },
+    Add {
+        left: Box<MirNode>,
+        right: Box<MirNode>,
+    },
+    Sub {
+        left: Box<MirNode>,
+        right: Box<MirNode>,
+    },
+    Mul {
+        left: Box<MirNode>,
+        right: Box<MirNode>,
+    },
+    Div {
+        left: Box<MirNode>,
+        right: Box<MirNode>,
+    },
+    Print {
+        left: Box<MirNode>,
+    },
 }
 
 impl std::fmt::Display for MirNode {

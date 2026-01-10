@@ -4,11 +4,13 @@ use std::fs::{File, read_to_string, remove_file, write};
 use std::path::Path;
 use std::process::{Command, exit};
 
+use reqwest::blocking;
+
 use core::lexer::lexer::lex;
 use core::llvm::llvm_ir::generator::LlvmIrGenerator;
 use core::llvm::middle_ir::mir_maker::{get_dependencies, make_middle_ir};
 use core::parser::parser::Parser;
-use core::semantic::semantic::SemanticAnalyser;
+use core::semantic::semantic::SemanticAnalyzer;
 use core::utils::clang_installer::resolve_clang;
 
 fn main() {
@@ -20,6 +22,7 @@ fn main() {
         }
     }
 
+    // work with args
     let args: Vec<String> = std::env::args().collect();
     if args.len() < 2 {
         eprintln!("Expected at least one argument");
@@ -32,6 +35,7 @@ fn main() {
 
     let debug = args.get(2).map(|arg| arg == "debug").unwrap_or(false);
 
+    // read file
     let contents = read_to_string(file_path).expect("Something went wrong reading the file");
 
     let tokens = match lex(&contents) {
@@ -47,6 +51,7 @@ fn main() {
         }
     };
 
+    // create AST
     let mut parser = Parser::new(tokens);
     let mut ast = match parser.parse() {
         Ok(ast) => {
@@ -67,9 +72,10 @@ fn main() {
         println!("Optimized AST: {:#?}", ast);
     }
 
-    let mut semantic = SemanticAnalyser::new();
+    // semantic analysis
+    let mut semantic = SemanticAnalyzer::new();
 
-    match semantic.analyse(&ast) {
+    match semantic.analyze(&ast) {
         Ok(()) => (),
         Err(e) => {
             eprintln!("{}", e);
@@ -77,6 +83,7 @@ fn main() {
         }
     }
 
+    // MIR
     let dependencies = get_dependencies(&ast);
     let mir = make_middle_ir(ast);
 
@@ -84,19 +91,21 @@ fn main() {
         println!("Middle IR: {:#?}", mir);
     }
 
+    // IR
     let mut generator = LlvmIrGenerator::new();
-    let llvm_ir = generator.generate_llvm_ir(mir, dependencies);
+    let llvm_ir = generator.generate_llvm_intermediate_representation(mir, dependencies);
 
     if debug {
         println!("LLVM IR: \n{}", llvm_ir);
     }
 
+    // create the temp file with ir code
     let llvm_file = file_path.with_extension("ll");
     write(&llvm_file, llvm_ir.clone()).unwrap();
 
+    // write to the final file
     let output_file = file_path.with_extension("exe");
 
-    //compiling and running
     let output = Command::new("clang")
         .arg(&llvm_file)
         .arg("-O3")
@@ -125,5 +134,6 @@ fn main() {
         println!("{}", String::from_utf8_lossy(&output.stdout));
     }
 
+    // remove temp file
     remove_file(llvm_file).unwrap();
 }

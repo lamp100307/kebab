@@ -1,6 +1,21 @@
+//! Dependency - mechanism works like "if it uses in source code, it will be added to ir code".
+//!
+//! # Examples
+//! ```kebab
+//! print(2+2);
+//! ```
+//!
+//! Because of we use `print` function, compiler will add follows string at the start to ir code:
+//!
+//! ```llvm
+//! @int_fmt = private unnamed_addr constant [4 x i8] c"%d\0A\00"
+//! declare i32 @printf(i8*, ...)
+//! ```
+
 use crate::core::llvm::middle_ir::mir_nodes::{Dependency, MirNode};
 use crate::core::parser::nodes::AstNode;
 
+/// Finds all dependencies in source code
 pub fn get_dependencies(ast: &AstNode) -> Vec<Dependency> {
     if let AstNode::Program(nodes) = ast {
         let mut dependencies = Vec::new();
@@ -8,7 +23,7 @@ pub fn get_dependencies(ast: &AstNode) -> Vec<Dependency> {
             if let AstNode::Print(node) = node {
                 match **node {
                     AstNode::Int(_) => dependencies.push(Dependency::IntFmt),
-                    _ => ()
+                    _ => (),
                 }
                 dependencies.push(Dependency::Printf);
             }
@@ -19,6 +34,7 @@ pub fn get_dependencies(ast: &AstNode) -> Vec<Dependency> {
     }
 }
 
+/// Converts AST to MIR
 pub fn make_middle_ir(ast: AstNode) -> Vec<MirNode> {
     if let AstNode::Program(nodes) = ast {
         let mut mir_nodes = Vec::new();
@@ -31,6 +47,7 @@ pub fn make_middle_ir(ast: AstNode) -> Vec<MirNode> {
     }
 }
 
+/// Converts AST node to MIR node
 fn make_middle_ir_node(ast: &AstNode) -> MirNode {
     match ast {
         AstNode::Int(n) => MirNode::I32(*n),
@@ -38,17 +55,27 @@ fn make_middle_ir_node(ast: &AstNode) -> MirNode {
             let left = make_middle_ir_node(&**left);
             let right = make_middle_ir_node(&**right);
             match op.as_str() {
-                "+" => MirNode::Add { left: Box::new(left), right: Box::new(right) },
-                "-" => MirNode::Sub { left: Box::new(left), right: Box::new(right) },
-                "*" => MirNode::Mul { left: Box::new(left), right: Box::new(right) },
-                "/" => MirNode::Div { left: Box::new(left), right: Box::new(right) },
+                "+" => MirNode::Add {
+                    left: Box::new(left),
+                    right: Box::new(right),
+                },
+                "-" => MirNode::Sub {
+                    left: Box::new(left),
+                    right: Box::new(right),
+                },
+                "*" => MirNode::Mul {
+                    left: Box::new(left),
+                    right: Box::new(right),
+                },
+                "/" => MirNode::Div {
+                    left: Box::new(left),
+                    right: Box::new(right),
+                },
                 _ => panic!("Unsupported operator in make_middle_ir_node {}", op),
             }
         }
-        AstNode::Print(node) => {
-            MirNode::Print {
-                left: Box::new(make_middle_ir_node(&**node)),
-            }
+        AstNode::Print(node) => MirNode::Print {
+            left: Box::new(make_middle_ir_node(&**node)),
         },
         _ => panic!("Unsupported AST node in make_middle_ir_node {}", ast),
     }

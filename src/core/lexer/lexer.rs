@@ -1,7 +1,8 @@
-use crate::core::error_trait::Span;
-use super::token::{TokenType, Token};
 use super::lexer_error::LexerError;
+use super::token::{Token, TokenType};
+use crate::core::error_trait::Span;
 
+/// Converts a string into a vector of tokens
 pub fn lex(content: &str) -> Result<Vec<Token>, LexerError> {
     let mut tokens = Vec::new();
     let mut line: usize = 1;
@@ -15,7 +16,12 @@ pub fn lex(content: &str) -> Result<Vec<Token>, LexerError> {
                 col = 1;
             }
             '\r' => {
-                if chars.peek().map(|(_, next_c)| *next_c == '\n').unwrap_or(false) {
+                // for windows \r\n
+                if chars
+                    .peek()
+                    .map(|(_, next_c)| *next_c == '\n')
+                    .unwrap_or(false)
+                {
                     chars.next();
                     line += 1;
                     col = 1;
@@ -32,6 +38,7 @@ pub fn lex(content: &str) -> Result<Vec<Token>, LexerError> {
                 let mut num = String::new();
                 num.push(c);
 
+                // collects digits to number
                 while let Some(&(_, next_c)) = chars.peek() {
                     if next_c.is_ascii_digit() {
                         num.push(next_c);
@@ -90,6 +97,7 @@ pub fn lex(content: &str) -> Result<Vec<Token>, LexerError> {
                 let mut id = String::new();
                 id.push(c);
 
+                // collects identifier
                 while let Some(&(_, next_c)) = chars.peek() {
                     if next_c.is_ascii_alphanumeric() {
                         id.push(next_c);
@@ -102,9 +110,10 @@ pub fn lex(content: &str) -> Result<Vec<Token>, LexerError> {
 
                 let mut types: TokenType = TokenType::Id;
 
+                // keywords
                 match id.as_str() {
                     "print" => types = TokenType::Keyword,
-                    _ => ()
+                    _ => (),
                 }
 
                 tokens.push(Token {
@@ -119,10 +128,8 @@ pub fn lex(content: &str) -> Result<Vec<Token>, LexerError> {
                 col += 1;
             }
             _ => {
-                let line_start = content[..pos]
-                    .rfind('\n')
-                    .map(|i| i + 1)
-                    .unwrap_or(0);
+                // unexpected char
+                let line_start = content[..pos].rfind('\n').map(|i| i + 1).unwrap_or(0);
 
                 let line_end = content[pos..]
                     .find('\n')
@@ -139,7 +146,7 @@ pub fn lex(content: &str) -> Result<Vec<Token>, LexerError> {
                     suggestion: {
                         match c {
                             ';' => Some("Remove this semicolon".to_string()),
-                            _ => None
+                            _ => None,
                         }
                     },
                 });

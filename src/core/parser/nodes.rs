@@ -1,12 +1,19 @@
+//! AST - Abstract Syntax Tree
+
 #[derive(Debug, Clone)]
 pub enum AstNode {
+    /// Root node
     Program(Vec<AstNode>),
     Int(i32),
+
+    /// expr like `1+2` where :
+    /// `1` and `2` are [`AstNode::Int`] nodes and `+` is [`AstNode::Op`]
     Op {
         left: Box<AstNode>,
         op: String,
         right: Box<AstNode>,
     },
+
     Print(Box<AstNode>),
 }
 
@@ -22,6 +29,10 @@ impl std::fmt::Display for AstNode {
 }
 
 impl AstNode {
+    /// Recursively optimizes the AST.
+    /// Now optimizes only [`AstNode::Op`] node.
+    /// # Example
+    /// [`AstNode::Op`] node `1 + 2` will be optimized to [`AstNode::Int`] node `3`
     pub fn optimize(&mut self) {
         match self {
             AstNode::Program(nodes) => {
