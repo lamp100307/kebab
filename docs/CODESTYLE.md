@@ -215,7 +215,6 @@ let$ DEFAULT_TIMEOUT = 30
 
 // ❌ wrong
 let$ developer-github = "@Lynx20wz"  // ❌ kebab-case
-let$ max_size = 1024                 // ❌ snake_case
 let$ maxSize = 1024                  // ❌ camelCase
 let$ default_timeout = 30            // ❌ snake_case
 ```
@@ -231,7 +230,7 @@ schema apiResponse { ... }
 
 // ❌ wrong
 class user-profile { ... }   // ❌ kebab-case
-schema api_response { ... }  // ❌ snake-case
+schema api_response { ... }  // ❌ snake_case
 ```
 
 ### 3.4. Mixins
@@ -243,7 +242,7 @@ mixin JsonConverterMixin {
     fn to-json(self) -> String { ... }
 }
 
-mixin json_converter { ... } // ❌ snake-case
+mixin json_converter { ... } // ❌ snake_case
 ```
 
 ## KSR-4: Result and Optional

@@ -33,7 +33,6 @@ mod download_error {
 use download_error::DownloadError;
 
 /// Checks if clang is installed, if not, downloads it
-/// If occurs [`DownloadError`], exits
 pub fn resolve_clang() -> Result<(), DownloadError> {
     if !check_clang_exists() {
         download_clang()?
