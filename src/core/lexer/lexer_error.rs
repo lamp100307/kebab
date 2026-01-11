@@ -1,8 +1,20 @@
+//! Enum of lexer errors
+//! Lexer errors looks like `LExxxx` where `xxxx` is error code
+//!
+//! # Error codes:
+//! LE0001 [`LexerError::InvalidChar`] - Invalid character
+
 use crate::core::error_trait::ErrorDisplay;
 use crate::core::error_trait::Span;
 
 #[derive(Debug)]
 pub enum LexerError {
+    /// [LE0001] Invalid character:
+    ///   |
+    /// 1 | print(№)
+    ///   |       ^
+    ///
+    /// help: maybe you accidentally misclicked a character?
     InvalidChar {
         char: char,
         span: Span,
