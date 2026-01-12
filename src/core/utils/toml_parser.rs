@@ -1,20 +1,55 @@
-use toml::Value;
-use std::fs;
+use std::{
+    fs::read_to_string,
+    path::{Path, PathBuf},
+};
 
-pub struct Project {
-    pub name: String,
-    pub version: String,
-    pub entry: String,
-    pub clang_path: String,
+use serde::Deserialize;
+
+#[derive(Deserialize)]
+pub struct TomlConfig {
+    pub project: ProjectOptions,
+    pub build: BuildOptions,
+    #[serde(skip)]
+    pub path: PathBuf,
 }
 
-pub fn parse_toml(path: &str) -> Result<Project, Box<dyn std::error::Error>> {
-    let content = fs::read_to_string(path)?;
-    let value: Value = toml::from_str(&content)?;
-    Ok(Project {
-        name: value["name"].as_str().unwrap().to_string(),
-        version: value["version"].as_str().unwrap().to_string(),
-        entry: value["entry"].as_str().unwrap().to_string(),
-        clang_path: value["clang_path"].as_str().unwrap().to_string(),
-    })
+#[derive(Deserialize)]
+pub struct ProjectOptions {
+    pub name: String,
+    // pub version: String,
+    pub entry: Option<PathBuf>,
+    pub clang_path: Option<PathBuf>,
+}
+
+#[derive(Deserialize)]
+pub struct BuildOptions {
+    #[serde(default)]
+    pub debug: bool,
+    #[serde(default)]
+    pub quiet: bool,
+    #[serde(default)]
+    pub output: Option<PathBuf>,
+}
+
+pub fn parse_toml(path: &Path) -> Result<TomlConfig, Box<dyn std::error::Error>> {
+    let content = read_to_string(path)?;
+    let mut toml: TomlConfig = toml::from_str(&content).expect("Couldn't read the toml file");
+    toml.path = path.to_path_buf();
+    Ok(toml)
+}
+
+/// Returns the path to the `oven.toml`
+/// Look for the `oven.toml` in the current directory,
+/// if it doesn't exist, look for given path
+pub fn get_toml_path(path: Option<&Path>) -> Option<PathBuf> {
+    std::env::current_dir()
+        .ok()
+        .map(|p| p.join("oven.toml"))
+        .filter(|p| p.exists())
+        .or_else(|| {
+            path.and_then(|p| {
+                let toml_path = p.join("oven.toml");
+                toml_path.exists().then_some(toml_path)
+            })
+        })
 }

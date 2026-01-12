@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "Kebab Compiler Configuration",
+  "description": "Schema for oven.toml configuration files",
+  "type": "object",
+  "properties": {
+    "project": {
+      "type": "object",
+      "description": "Project metadata",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Project name",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_-]*$"
+        },
+        "version": {
+          "type": "string",
+          "description": "Project version (semver)",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional project description"
+        },
+        "entry": {
+          "type": "string",
+          "description": "Main source file path",
+          "examples": ["./src/main.keb", "program.keb"]
+        },
+        "clang_path": {
+          "type": "string",
+          "description": "Path to clang compiler",
+          "default": "clang",
+          "examples": ["clang.exe", "C:/LLVM/bin/clang.exe"]
+        }
+      },
+      "required": ["name", "version"]
+    },
+    "build": {
+      "type": "object",
+      "description": "Build configuration",
+      "properties": {
+        "output": {
+          "type": "string",
+          "description": "Output path"
+        }
+      }
+    }
+  },
+  "required": ["project"]
+}

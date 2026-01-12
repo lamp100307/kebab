@@ -1,6 +1,6 @@
 use std::{iter::Peekable, path::PathBuf, vec::IntoIter};
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Clone)]
 pub enum ArgType {
     Run,
     Build,
@@ -24,13 +24,14 @@ impl ArgType {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Args {
     pub base_name: String,
     pub command: ArgType,
     pub path: Option<PathBuf>,
     pub output: Option<PathBuf>,
     pub debug: bool,
+    pub quiet: bool,
 }
 
 /// Get command line arguments
@@ -44,10 +45,10 @@ pub fn get_args() -> Result<Args, String> {
 
     args.base_name = iter.next().unwrap().clone();
     args.command = ArgType::from(iter.next().ok_or("Missing command")?.as_str())?;
-    match iter.next_if(|x| !x.starts_with('-')) {
-        Some(path) => args.path = Some(PathBuf::from(path)),
-        None => {}
-    }
+    args.path = match iter.next_if(|x| !x.starts_with('-')) {
+        Some(path) => Some(PathBuf::from(path)),
+        None => None,
+    };
 
     while let Some(arg) = iter.next() {
         match arg.as_str() {
@@ -55,6 +56,7 @@ pub fn get_args() -> Result<Args, String> {
                 args.output = Some(PathBuf::from(iter.next().ok_or("Missing output path")?))
             }
             "-d" | "--debug" => args.debug = true,
+            "-q" | "--quiet" => args.quiet = true,
             _ => return Err(format!("Unknown option: {}", arg)),
         }
     }

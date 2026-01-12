@@ -34,17 +34,11 @@ use download_error::DownloadError;
 
 /// Checks if clang is installed, if not, downloads it
 /// If occurs [`DownloadError`], exits
-pub fn resolve_clang() -> Result<(), DownloadError> {
-    if !check_clang_exists() {
+pub fn resolve_clang(clang_path: &Path) -> Result<(), DownloadError> {
+    if !clang_path.exists() {
         download_clang()?
     }
     Ok(())
-}
-
-/// Checks if clang is installed
-/// Path to clang: `../clang`, so in the same folder with main.rs
-fn check_clang_exists() -> bool {
-    Path::new("../clang.exe").exists()
 }
 
 /// Downloads portable Clang from ours GitHub repo

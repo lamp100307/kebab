@@ -1,0 +1,9 @@
+[project]
+name = "program"         # Еhe future name of the executable file
+version = "0.1.0"
+entry = "./src/main.keb" # Optional if file name is main
+# clang_path = "clang"   # build/Clang.exe by default
+
+[build]
+quiet = true # Remove this line to enable logging
+debug = true
