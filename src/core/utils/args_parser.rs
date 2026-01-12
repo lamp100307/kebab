@@ -1,63 +1,75 @@
-#[derive(Debug, PartialEq)]
+use std::{iter::Peekable, path::PathBuf, vec::IntoIter};
+
+#[derive(PartialEq, Eq)]
 pub enum ArgType {
-    Path,
-    Output,
-    Debug,
-    Command,
+    Run,
+    Build,
+    Test,
 }
 
-#[derive(Debug)]
-pub struct Arg {
-    pub arg_type: ArgType,
-    pub value: Option<String>,
+impl Default for ArgType {
+    fn default() -> Self {
+        ArgType::Run
+    }
 }
 
-pub fn parse_args(args: Vec<String>) -> (Option<String>, Vec<Arg>) {
-    let mut command = None;
-    let mut parsed_args = Vec::new();
-    let mut iter = args.iter().enumerate().peekable();
-    
-    while let Some((_, arg)) = iter.next() {
-        match arg.as_str() {
-            "run" | "build" | "test" | "clean" => {
-                if command.is_none() {
-                    command = Some(arg.clone());
-                } else {
-                    parsed_args.push(Arg {
-                        arg_type: ArgType::Path,
-                        value: Some(arg.clone()),
-                    });
-                }
-            }
-            "-p" => {
-                if let Some(next_arg) = iter.peek() {
-                    parsed_args.push(Arg {
-                        arg_type: ArgType::Path,
-                        value: Some(next_arg.1.clone()),
-                    });
-                    iter.next();
-                }
-            }
-            "-o" => {
-                if let Some(next_arg) = iter.peek() {
-                    parsed_args.push(Arg {
-                        arg_type: ArgType::Output,
-                        value: Some(next_arg.1.clone()),
-                    });
-                    iter.next();
-                }
-            }
-            "-d" | "--debug" | "debug" => {
-                parsed_args.push(Arg {
-                    arg_type: ArgType::Debug,
-                    value: None,
-                });
-            }
-            _ => {
-                panic!("Unsupported argument: {}", arg);
-            }
+impl ArgType {
+    fn from(value: &str) -> Result<Self, String> {
+        match value.to_lowercase().as_str() {
+            "run" => Ok(ArgType::Run),
+            "build" => Ok(ArgType::Build),
+            "test" => Ok(ArgType::Test),
+            _ => Err(format!("Unsupported command: {}", value)),
         }
     }
-    
-    (command, parsed_args)
+}
+
+#[derive(Default)]
+pub struct Args {
+    pub base_name: String,
+    pub command: ArgType,
+    pub path: Option<PathBuf>,
+    pub output: Option<PathBuf>,
+    pub debug: bool,
+}
+
+/// Get command line arguments
+/// # The Kebab compile call examples
+/// - `kebab run <path>`
+/// - `kebab build <path> -d -o <output_path>`
+/// - `kebab test <path>`
+pub fn get_args() -> Result<Args, String> {
+    let mut iter = get_args_iter()?;
+    let mut args = Args::default();
+
+    args.base_name = iter.next().unwrap().clone();
+    args.command = ArgType::from(iter.next().ok_or("Missing command")?.as_str())?;
+    match iter.next_if(|x| !x.starts_with('-')) {
+        Some(path) => args.path = Some(PathBuf::from(path)),
+        None => {}
+    }
+
+    while let Some(arg) = iter.next() {
+        match arg.as_str() {
+            "-o" | "--output" => {
+                args.output = Some(PathBuf::from(iter.next().ok_or("Missing output path")?))
+            }
+            "-d" | "--debug" => args.debug = true,
+            _ => return Err(format!("Unknown option: {}", arg)),
+        }
+    }
+
+    Ok(args)
+}
+
+fn get_args_iter() -> Result<Peekable<IntoIter<String>>, String> {
+    let user_args: Vec<String> = std::env::args().collect();
+
+    if user_args.len() < 2 {
+        return Err(
+            "Usage: kebab <command> <path> [-o/--output <output_path>] [-d/--debug]".to_string(),
+        );
+    }
+
+    Ok(user_args.into_iter().peekable())
 }
