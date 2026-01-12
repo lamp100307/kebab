@@ -1,4 +1,7 @@
-use std::{fs::File, path::Path};
+use std::{
+    fs::File,
+    path::{Path, PathBuf},
+};
 
 use reqwest::blocking;
 
@@ -32,27 +35,42 @@ mod download_error {
 
 use download_error::DownloadError;
 
-/// Checks if clang is installed, if not, downloads it
-/// If occurs [`DownloadError`], exits
-pub fn resolve_clang(clang_path: &Path) -> Result<(), DownloadError> {
-    if !clang_path.exists() {
-        download_clang()?
-    }
-    Ok(())
+pub struct ClangInstaller {
+    clang_path: PathBuf,
 }
 
-/// Downloads portable Clang from ours GitHub repo
-fn download_clang() -> Result<(), DownloadError> {
-    println!("📦 Downloading Clang...");
-    println!("🕑 This might take a few minutes...");
+impl ClangInstaller {
+    pub fn new(clang_path: &Path) -> Self {
+        ClangInstaller {
+            clang_path: clang_path.to_path_buf(),
+        }
+    }
 
-    const URL: &str = "https://github.com/lamp100307/KebabBack/releases/download/clang/clang.exe";
-    const FILE_PATH: &str = "clang.exe";
+    /// Checks if clang is installed, if not, downloads it
+    /// If occurs [`DownloadError`], exits
+    pub fn resolve_clang(&self) -> Result<PathBuf, DownloadError> {
+        if !self.clang_path.exists() {
+            self.download_clang()?;
+        }
+        Ok(self.clang_path.clone())
+    }
 
-    let mut response = blocking::get(URL)?;
-    let mut file = File::create(FILE_PATH)?;
-    std::io::copy(&mut response, &mut file)?;
+    fn download_clang(&self) -> Result<(), DownloadError> {
+        println!("📦 Downloading Clang...");
+        println!("🕑 This might take a few minutes...");
 
-    println!("✅ Portable Clang ready!");
-    Ok(())
+        const URL: &str =
+            "https://github.com/lamp100307/KebabBack/releases/download/clang/clang.exe";
+
+        if let Some(parent) = self.clang_path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+
+        let mut response = blocking::get(URL)?;
+        let mut file = File::create(&self.clang_path)?;
+        std::io::copy(&mut response, &mut file)?;
+
+        println!("✅ Portable Clang ready!");
+        Ok(())
+    }
 }

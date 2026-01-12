@@ -5,5 +5,5 @@ entry = "./src/main.keb" # Optional if file name is main
 # clang_path = "clang"   # build/Clang.exe by default
 
 [build]
-quiet = true # Remove this line to enable logging
-debug = true
+quiet = true  # Remove this line to enable logging
+debug = false

@@ -1,5 +1,6 @@
 mod core;
 
+use std::ffi::OsStr;
 use std::fs::{create_dir_all, read_to_string, remove_file, write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, exit};
@@ -10,7 +11,8 @@ use core::llvm::middle_ir::mir_maker::{get_dependencies, make_middle_ir};
 use core::parser::parser::Parser;
 use core::semantic::semantic::SemanticAnalyser;
 use core::utils::args_parser::{ArgType, Args, get_args};
-use core::utils::clang_installer::resolve_clang;
+use core::utils::clang_installer::ClangInstaller;
+use core::utils::funcs::project_relative;
 
 use crate::core::utils::toml_parser::*;
 
@@ -33,10 +35,7 @@ fn main() {
         std::process::exit(1);
     });
 
-    let output_path = args
-        .output
-        .clone()
-        .unwrap_or(get_output_path(source_path.as_path(), toml.as_ref()));
+    let output_path = get_output_path(source_path.as_path(), toml.as_ref(), &args);
 
     match args.command {
         ArgType::Run => {
@@ -72,6 +71,7 @@ fn build(
     is_debug: bool,
 ) {
     let is_quiet = args.quiet || toml.as_ref().map_or(false, |t| t.build.quiet);
+    let build_dir = project_relative(toml, PathBuf::from("/build").as_path());
 
     let content = read_to_string(&source_path)
         .expect(format!("Failed: read the file: {source_path:?}").as_str());
@@ -128,27 +128,31 @@ fn build(
     let mut generator = LlvmIrGenerator::new();
     let llvm_ir = generator.generate_llvm_ir(mir, dependencies);
 
-    if args.debug {
+    if is_debug {
         println!("LLVM IR: \n{llvm_ir}",);
     }
 
-    let llvm_path = output_path.with_extension("ll");
+    let llvm_path = build_dir
+        .join(output_path.file_name().unwrap_or(OsStr::new("output.ll")))
+        .with_extension("ll");
     write(&llvm_path, llvm_ir.clone()).unwrap();
 
-    //compiling and running
-    match resolve_clang(
-        toml.as_ref()
-            .and_then(|t| t.project.clang_path.as_deref())
-            .unwrap_or(Path::new("clang.exe")),
-    ) {
-        Ok(()) => (),
+    // compiling and running
+    let clang_path = match ClangInstaller::new(
+        // the path is from oven.toml, or in the build folder
+        toml.and_then(|t| t.project.clang_path.as_deref())
+            .unwrap_or(build_dir.join("clang.exe").as_path()),
+    )
+    .resolve_clang()
+    {
+        Ok(clang_path) => clang_path,
         Err(e) => {
-            eprintln!("Failed: download the portable Clang: {e}");
+            eprintln!("Failed to download the portable Clang: {e}");
             exit(1);
         }
-    }
+    };
 
-    let clang_compile_proc = Command::new("clang")
+    let clang_compile_proc = Command::new(clang_path)
         .arg(&llvm_path)
         .arg("-O3")
         .arg("-o")
@@ -177,7 +181,7 @@ fn build(
         );
     }
 
-    remove_file(llvm_path).unwrap();
+    // remove_file(llvm_path).unwrap();
 }
 
 fn run(path: &Path) {
@@ -188,44 +192,6 @@ fn run(path: &Path) {
     if !output.stdout.is_empty() {
         println!("{}", String::from_utf8_lossy(&output.stdout));
     }
-}
-
-/// Returns the path to the output file
-/// Stem for the output file is (by priority):
-/// 1) given output path in args
-/// 2) name of the project from toml
-/// 3) the same name as the source
-///
-/// Path of the output file is (by priority):
-/// 1) given output path in args
-/// 2) in build dir
-/// 3) in the same dir with source
-fn get_output_path(source_path: &Path, toml: Option<&TomlConfig>) -> PathBuf {
-    let filename = match toml {
-        Some(config) => &config.project.name,
-        None => source_path
-            .file_stem()
-            .and_then(|s| s.to_str())
-            .unwrap_or("output"),
-    };
-
-    let directory = match toml {
-        Some(config) => config
-            .path
-            .parent()
-            .map(|p| p.join("build"))
-            .unwrap_or(PathBuf::from("./build")),
-
-        None => source_path.parent().unwrap_or(Path::new(".")).to_path_buf(),
-    };
-
-    let mut output = directory.join(filename);
-    if let Some(parent) = output.parent() {
-        create_dir_all(parent)
-            .unwrap_or_else(|e| panic!("Failed to create directory {:?}: {}", parent, e));
-    }
-    output.set_extension("exe");
-    output
 }
 
 /// Returns the path to the source file
@@ -245,7 +211,7 @@ fn get_source_path(
         if path.is_file() {
             return path
                 .canonicalize()
-                .map_err(|e| format!("Failed:  access {path:?}: {e}"));
+                .map_err(|e| format!("Failed: access {path:?}: {e}"));
         }
         if is_debug {
             eprintln!("Warning: {path:?} is not a file, ignoring");
@@ -254,12 +220,15 @@ fn get_source_path(
 
     if let Some(config) = config {
         if let Some(entry) = &config.project.entry {
-            if entry.is_file() {
-                return entry
+            let path = project_relative(Some(config), entry);
+            if path.is_file() {
+                return path
                     .canonicalize()
-                    .map_err(|e| format!("Failed: to access {entry:?}: {e}"));
+                    .map_err(|e| format!("Failed: access {path:?}: {e}"));
             }
-            eprintln!("Warning: {entry:?} is not a file, ignoring",);
+            if is_debug {
+                eprintln!("Warning: {path:?} is not a file, ignoring");
+            }
         }
 
         let candidates = vec![
@@ -283,7 +252,7 @@ fn get_source_path(
 
         return Err(format!(
             "Could not find source file for project '{}'. \
-            Tried: ./src/{0}.keb, ./{0}.keb, ./main.keb",
+            Tried: ./src/{0}.keb, ./{0}.keb, ./main.keb, ./src/main.keb",
             config.project.name
         ));
     }
@@ -292,4 +261,67 @@ fn get_source_path(
         "Failed: file with the source code not found. Provide path <file.keb> or create oven.toml"
             .to_string(),
     )
+}
+
+/// Returns the path to the output file
+/// Stem for the output file is (by priority):
+/// 1) given output path in args
+/// 2) name of the project from toml
+/// 3) the same name as the source
+///
+/// Path of the output file is (by priority):
+/// 1) given output path in args
+/// 2) in build dir
+/// 3) in the same dir with source
+fn get_output_path(source_path: &Path, toml: Option<&TomlConfig>, args: &Args) -> PathBuf {
+    if let Some(path) = &args.output {
+        let output_path = PathBuf::from(path);
+
+        let result = match path.file_name() {
+            Some(name) => output_path.parent().unwrap_or(Path::new(".")).join(name),
+            None => output_path
+                .parent()
+                .unwrap_or(Path::new("."))
+                .join(toml.map_or("output", |t| t.project.name.as_str())),
+        };
+
+        return set_target_extension(&result);
+    }
+
+    let filename = match toml {
+        Some(config) => &config.project.name,
+        None => source_path
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("output"),
+    };
+
+    let directory = match toml {
+        Some(config) => config
+            .path
+            .parent()
+            .map(|p| p.join("build"))
+            .unwrap_or(PathBuf::from("./build")),
+
+        None => source_path.parent().unwrap_or(Path::new(".")).to_path_buf(),
+    };
+
+    let output = directory.join(filename);
+    if let Some(parent) = output.parent() {
+        create_dir_all(parent)
+            .unwrap_or_else(|e| panic!("Failed to create directory {:?}: {}", parent, e));
+    }
+
+    set_target_extension(output.as_path())
+}
+
+fn set_target_extension(path: &Path) -> PathBuf {
+    let mut result = path.to_path_buf();
+    #[cfg(target_os = "windows")]
+    result.set_extension("exe");
+    #[cfg(target_os = "macos")]
+    result.set_extension("app");
+    #[cfg(target_os = "linux")]
+    result.set_extension("AppImage");
+    result
 }
