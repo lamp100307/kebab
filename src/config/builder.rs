@@ -2,10 +2,12 @@ use std::path::{Path, PathBuf};
 
 use super::paths::PathsBuilder;
 use super::structures::{Flags, Project};
+use crate::commands::CommandType;
 use crate::{args::Args, toml::TomlConfig};
 
 #[derive(Debug)]
 pub struct Config {
+    pub command: CommandType,
     pub flags: Flags,
     pub paths: super::paths::Paths,
     pub project: Option<Project>,
@@ -19,7 +21,7 @@ pub struct ConfigBuilder {
 }
 
 impl ConfigBuilder {
-    pub fn new(args: Args) -> Config {
+    pub fn new(args: Args) -> Result<Config, String> {
         let working_dir = std::env::current_dir().unwrap();
         Self {
             args,
@@ -31,7 +33,25 @@ impl ConfigBuilder {
         .build()
     }
 
-    pub fn discover_project(mut self) -> Self {
+    fn build(self) -> Result<Config, String> {
+        let flags = self.build_flags();
+        let project = self.build_project_info();
+
+        Ok(Config {
+            paths: PathsBuilder::new(
+                &self.args,
+                self.toml_config.as_ref(),
+                self.project_dir,
+                self.working_dir,
+            )
+            .build_paths()?,
+            command: self.args.command,
+            flags,
+            project,
+        })
+    }
+
+    fn discover_project(mut self) -> Self {
         let search_dir = self
             .args
             .path
@@ -55,19 +75,6 @@ impl ConfigBuilder {
             }
         }
         self
-    }
-
-    pub fn build(self) -> Config {
-        let flags = self.build_flags();
-        let project = self.build_project_info();
-
-        Config {
-            flags,
-            paths: PathsBuilder {
-                self.args
-            },
-            project,
-        }
     }
 
     fn build_flags(&self) -> Flags {
@@ -102,7 +109,7 @@ impl ConfigBuilder {
             Project {
                 name: toml.project_opt.name.clone(),
                 version: toml.project_opt.version.clone(),
-                authors: toml.project_opt.authors.clone().unwrap_or_default(),
+                authors: toml.project_opt.authors.clone(),
                 toml_path: project_dir.join("oven.toml"),
                 project_dir,
             }
@@ -113,8 +120,7 @@ impl ConfigBuilder {
         let mut current = start_dir;
 
         while current.exists() {
-            let toml_path = current.join("oven.toml");
-            if toml_path.is_file() {
+            if current.join("oven.toml").is_file() {
                 return Some(current.to_path_buf());
             }
 

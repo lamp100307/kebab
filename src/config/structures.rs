@@ -4,8 +4,8 @@ use std::path::PathBuf;
 pub struct Flags {
     pub debug: bool,
     pub quiet: bool,
-    pub optimize: bool,
-    pub verbose: bool,
+    // pub optimize: bool,
+    // pub verbose: bool,
 }
 
 #[derive(Debug)]

@@ -22,8 +22,22 @@ pub struct PathsBuilder<'a> {
     working_dir: PathBuf,
 }
 
-impl PathsBuilder<'_> {
-    fn build_paths(&self) -> Result<Paths, String> {
+impl<'a> PathsBuilder<'a> {
+    pub fn new(
+        args: &'a crate::args::Args,
+        toml_config: Option<&'a crate::toml::TomlConfig>,
+        project_dir: Option<PathBuf>,
+        working_dir: PathBuf,
+    ) -> PathsBuilder<'a> {
+        Self {
+            args,
+            toml_config,
+            project_dir,
+            working_dir,
+        }
+    }
+
+    pub fn build_paths(&self) -> Result<Paths, String> {
         let entry = self.resolve_entry_path()?;
         let build_dir = self.resolve_build_dir();
 
@@ -166,11 +180,7 @@ impl PathsBuilder<'_> {
 
         let mut result = dir.join(filename);
 
-        // Добавляем .exe на Windows если нет расширения
-        #[cfg(target_os = "windows")]
-        if result.extension().is_none() {
-            result.set_extension("exe");
-        }
+        self.set_target_extension(&mut result);
 
         result
     }
@@ -200,10 +210,7 @@ impl PathsBuilder<'_> {
 
         let mut output = build_dir.join(name);
 
-        #[cfg(target_os = "windows")]
-        if output.extension().is_none() {
-            output.set_extension("exe");
-        }
+        self.set_target_extension(&mut output);
 
         output
     }
@@ -243,5 +250,17 @@ impl PathsBuilder<'_> {
         }
 
         build_dir.join("clang.exe")
+    }
+
+    fn set_target_extension(&self, output: &mut PathBuf) {
+        #[cfg(target_os = "windows")]
+        if output.extension().is_none() {
+            output.set_extension("exe");
+        }
+
+        #[cfg(target_os = "linux")]
+        if output.extension().is_none() {
+            output.set_extension("bin");
+        }
     }
 }

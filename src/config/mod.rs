@@ -2,4 +2,4 @@ mod builder;
 mod paths;
 mod structures;
 
-pub use builder::ConfigBuilder;
+pub use builder::{Config, ConfigBuilder};

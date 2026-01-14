@@ -15,6 +15,8 @@ pub struct TomlConfig {
 #[derive(Deserialize)]
 pub struct ProjectOptions {
     pub name: String,
+    #[serde(default)]
+    pub authors: Vec<String>,
     pub version: String,
     pub entry: Option<PathBuf>,
     pub clang_path: Option<PathBuf>,

@@ -8,7 +8,7 @@ use reqwest::blocking;
 mod download_error {
     pub enum DownloadError {
         IO(std::io::Error),
-        Reqwest(reqwest::Error),
+        String(String),
     }
 
     impl From<std::io::Error> for DownloadError {
@@ -19,7 +19,7 @@ mod download_error {
 
     impl From<reqwest::Error> for DownloadError {
         fn from(e: reqwest::Error) -> Self {
-            DownloadError::Reqwest(e)
+            DownloadError::String(e.to_string())
         }
     }
 
@@ -27,7 +27,7 @@ mod download_error {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             match self {
                 DownloadError::IO(e) => e.fmt(f),
-                DownloadError::Reqwest(e) => e.fmt(f),
+                DownloadError::String(e) => e.fmt(f),
             }
         }
     }
@@ -59,6 +59,7 @@ impl ClangInstaller {
         println!("📦 Downloading Clang...");
         println!("🕑 This might take a few minutes...");
 
+        //TODO: add linux support
         const URL: &str =
             "https://github.com/lamp100307/KebabBack/releases/download/clang/clang.exe";
 
@@ -66,8 +67,8 @@ impl ClangInstaller {
             std::fs::create_dir_all(parent)?;
         }
 
-        let mut response = blocking::get(URL)?;
-        let mut file = File::create(&self.clang_path)?;
+        let mut response = blocking::get(URL).expect("Failed to download Clang");
+        let mut file = File::create(&self.clang_path).expect("Failed to create file");
         std::io::copy(&mut response, &mut file)?;
 
         println!("✅ Portable Clang ready!");
