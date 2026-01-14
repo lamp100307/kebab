@@ -1,15 +1,13 @@
-use crate::core::llvm::middle_ir::mir_nodes::Dependency;
 use super::super::middle_ir::mir_nodes::MirNode;
+use crate::core::llvm::middle_ir::mir_nodes::Dependency;
 
 pub struct LlvmIrGenerator {
-    stack: u32
+    stack: u32,
 }
 
 impl LlvmIrGenerator {
     pub fn new() -> LlvmIrGenerator {
-        LlvmIrGenerator {
-            stack: 0
-        }
+        LlvmIrGenerator { stack: 0 }
     }
 
     fn fresh_var(&mut self) -> String {
@@ -28,7 +26,9 @@ impl LlvmIrGenerator {
                     ir.push_str("declare i32 @printf(i8*, ...)\n");
                 }
                 Dependency::IntFmt => {
-                    ir.push_str("@int_fmt = private unnamed_addr constant [4 x i8] c\"%d\\0A\\00\"\n");
+                    ir.push_str(
+                        "@int_fmt = private unnamed_addr constant [4 x i8] c\"%d\\0A\\00\"\n",
+                    );
                 }
             }
         }
@@ -47,16 +47,16 @@ impl LlvmIrGenerator {
 
     fn gen_node(&mut self, node: &MirNode, ir: &mut String) -> String {
         match node {
-            MirNode::I32(n) => {
-                n.to_string()
-            }
+            MirNode::I32(n) => n.to_string(),
             MirNode::Add { left, right } => {
                 let left_val = self.gen_node(&**left, ir);
                 let right_val = self.gen_node(&**right, ir);
 
                 let temp_name = self.fresh_var();
 
-                ir.push_str(&format!("  {} = add i32 {}, {}\n", temp_name, left_val, right_val).as_str());
+                ir.push_str(
+                    &format!("  {} = add i32 {}, {}\n", temp_name, left_val, right_val).as_str(),
+                );
 
                 temp_name
             }
@@ -66,7 +66,9 @@ impl LlvmIrGenerator {
 
                 let temp_name = self.fresh_var();
 
-                ir.push_str(&format!("  {} = sub i32 {}, {}\n", temp_name, left_val, right_val).as_str());
+                ir.push_str(
+                    &format!("  {} = sub i32 {}, {}\n", temp_name, left_val, right_val).as_str(),
+                );
                 temp_name
             }
             MirNode::Mul { left, right } => {
@@ -75,7 +77,9 @@ impl LlvmIrGenerator {
 
                 let temp_name = self.fresh_var();
 
-                ir.push_str(&format!("  {} = mul i32 {}, {}\n", temp_name, left_val, right_val).as_str());
+                ir.push_str(
+                    &format!("  {} = mul i32 {}, {}\n", temp_name, left_val, right_val).as_str(),
+                );
                 temp_name
             }
             MirNode::Div { left, right } => {
@@ -84,7 +88,9 @@ impl LlvmIrGenerator {
 
                 let temp_name = self.fresh_var();
 
-                ir.push_str(&format!("  {} = sdiv i32 {}, {}\n", temp_name, left_val, right_val).as_str());
+                ir.push_str(
+                    &format!("  {} = sdiv i32 {}, {}\n", temp_name, left_val, right_val).as_str(),
+                );
                 temp_name
             }
             MirNode::Print { left } => {
@@ -93,7 +99,7 @@ impl LlvmIrGenerator {
                     MirNode::I32(_) => {
                         ir.push_str(&format!("  call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @int_fmt, i32 0, i32 0), i32 {})\n", left_val).as_str());
                     }
-                    _ => ()
+                    _ => (),
                 }
                 "".to_string()
             }
