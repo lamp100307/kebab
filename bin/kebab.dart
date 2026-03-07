@@ -27,7 +27,7 @@ void main(List<String> arguments) {
   File(outputPath).writeAsStringSync(output);
 
   //compile and run
-  final execPath = '${arguments[0].split('.').first}.c';
+  final execPath = arguments[0].split('.').first;
   final compileResult = Process.runSync('tcc', [outputPath, '-o', execPath]);
   
   if (compileResult.exitCode != 0) {
