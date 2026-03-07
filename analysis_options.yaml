@@ -1,0 +1,7 @@
+include: package:lints/recommended.yaml 
+linter:
+  rules:
+    prefer_expression_function_bodies: true
+    prefer_final_locals: true
+    prefer_const_declarations: true
+    eol_at_end_of_file: true
