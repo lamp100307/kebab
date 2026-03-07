@@ -83,22 +83,57 @@ class Parser {
             return FuncCallNode(token.value, []);
           }
         } else {
-          const str = """
-          ／＞　 フ
-　　　　　| 　_　 _|
-　 　　　／`ミ _x 彡
-　　 　 /　　　 　 |
-　　　 /　 ヽ　　 ﾉ
-　／￣|　　 |　|　|
-　| (￣ヽ＿_ヽ_)_)
-　＼二つ""";
-          print(str);
-          throw UnimplementedError(
-            "VaRrrrrrrrrr is not implemented yet (murrr meoww  (lynx said))",
-          );
+          if (expectWithValue(TokenType.assign, '=')) {
+            pos++;
+            return VarAssignNode(token.value, parseExpr(0));
+          }
+          return VarRefNode(token.value);
+        }
+      case TokenType.lParen:
+        pos++;
+        final expr = parseExpr(0);
+        consumeWithValue(TokenType.rParen, ')');
+        return expr;
+      case TokenType.key:
+        switch (token.value) {
+          case "let":
+            pos++;
+            final name = consume(TokenType.id).value;
+            KebabType? type;
+            if (expect(TokenType.colon)) {
+              pos++;
+              type = parseKebabType(consume(TokenType.id).value);
+            }
+            ASTNode? value;
+            if (expectWithValue(TokenType.assign, '=')) {
+              pos++;
+              value = parseExpr(0);
+            }
+            return VarDeclNode(name, type, value);
+          default:
+            throw UnsupportedError("Unsupported keyword ${token.value}");
         }
       default:
-        throw Exception("Unexpected token");
+        throw Exception("Unexpected token ${token.type} at $pos");
+    }
+  }
+
+  KebabType parseKebabType(String rawType) {
+    switch (rawType) {
+      case "i8": return KebabType.i8;
+      case "i16": return KebabType.i16;
+      case "i32": return KebabType.i32;
+      case "i64": return KebabType.i64;
+      case "u1": return KebabType.u1;
+      case "u8": return KebabType.u8;
+      case "u16": return KebabType.u16;
+      case "u32": return KebabType.u32;
+      case "u64": return KebabType.u64;
+      case "f32": return KebabType.f32;
+      case "f64": return KebabType.f64;
+      case "char": return KebabType.char;
+      case "str": return KebabType.str;
+      default: throw Exception("Unknown kebab type");
     }
   }
 }

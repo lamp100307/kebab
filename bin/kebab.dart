@@ -17,7 +17,7 @@ void main(List<String> arguments) {
   final List<ASTNode> nodes = parser.parse();
   if (debug) for (var node in nodes) {print(node.toString());}
   final Compiler compiler = Compiler(nodes);
-  compiler.add_dependencies();
+  compiler.addDependencies();
   final output = compiler.compile();
 
   if (debug) print(output);
@@ -36,11 +36,10 @@ void main(List<String> arguments) {
     return;
   }
   
-  // 2. Запускаем и ПОЛУЧАЕМ ВЫВОД
   final runResult = Process.runSync('./$execPath', []);
   
   if (runResult.exitCode == 0) {
-    print(runResult.stdout);  // ВОТ ТУТ ВЫВОД!
+    print(runResult.stdout); 
   } else {
     print('❌ Ошибка выполнения:');
     print(runResult.stderr);

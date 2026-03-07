@@ -1,6 +1,7 @@
 import 'package:kebab/token.dart';
 
 class Lexer {
+  static const keywords = ['let'];
   static List<Token> tokenize(String input) {
     int pos = 0;
     final List<Token> tokens = [];
@@ -57,17 +58,38 @@ class Lexer {
           tokens.add(Token(TokenType.comma, c));
           pos += 1;
           break;
+        case ':':
+          tokens.add(Token(TokenType.colon, c));
+          pos += 1;
+          break;
+        case '=':
+          tokens.add(Token(TokenType.assign, c));
+          pos += 1;
+          break;
         default:
           bool isAlphaNumeric(String c) =>
-              c.codeUnitAt(0) ^ 65 <= 25 ||
-              c.codeUnitAt(0) ^ 97 <= 25 ||
-              c.codeUnitAt(0) ^ 48 <= 9;
+              c.codeUnitAt(0) >= 'a'.codeUnitAt(0) &&
+                  c.codeUnitAt(0) <= 'z'.codeUnitAt(0) ||
+              c.codeUnitAt(0) >= 'A'.codeUnitAt(0) &&
+                  c.codeUnitAt(0) <= 'Z'.codeUnitAt(0) ||
+              c.codeUnitAt(0) >= '0'.codeUnitAt(0) &&
+                  c.codeUnitAt(0) <= '9'.codeUnitAt(0);
 
-          if (c.codeUnitAt(0) ^ 65 <= 25 || c.codeUnitAt(0) ^ 97 <= 25) {
+          bool isLetter(String c) {
+            final int code = c.codeUnitAt(0);
+            return (code >= 65 && code <= 90) ||    
+                  (code >= 97 && code <= 122);   
+          }
+
+          if (isLetter(c)) {
             String id = '';
             while (pos < input.length && isAlphaNumeric(input[pos])) {
               id += input[pos];
               pos += 1;
+            }
+            if (keywords.contains(id)) {
+              tokens.add(Token(TokenType.key, id));
+              break;
             }
             tokens.add(Token(TokenType.id, id));
           } else {
