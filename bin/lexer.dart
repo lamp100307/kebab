@@ -77,8 +77,7 @@ class Lexer {
 
           bool isLetter(String c) {
             final int code = c.codeUnitAt(0);
-            return (code >= 65 && code <= 90) ||    
-                  (code >= 97 && code <= 122);   
+            return (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
           }
 
           if (isLetter(c)) {

@@ -18,46 +18,49 @@ class Compiler {
 
   void compileNode(ASTNode node) {
     switch (node) {
-        case OpNode(left: final left, op: final op, right: final right):
-          code += "$left $op $right";
-          break;
-        case IntNode(value: final value):
-          code += "$value";
-          break;
-        case FuncCallNode(name: final name, args: final args):
-          switch (name) {
-            case "print": compilePrint(args);
-          }
-          break;
-        case VarRefNode(name: final name):
-          vars.containsKey(name) ? code += name : throw Exception("Variable not declared $name");
-          break;
-        
-        case VarDeclNode(name: final name, type: final type, value: final value):
-          if (value == null && type == null) {
-            throw Exception("Variable $name must have a type or a value");
-          }
-          if (type == null) {
-            code += "auto $name";
-            vars[name] = typeFromNode(value!); // ! unreachable
-          } else {
-            vars[name] = type.toCType();
-            code += "${type.toCType()} $name";
-          }
-          if (value != null) {
-            code += " = ";
-            compileNode(value);
-          }
-          code += ";\n";
-          break;
-        case VarAssignNode(name: final name, value: final value):
-          code += "$name = ";
+      case OpNode(left: final left, op: final op, right: final right):
+        code += "$left $op $right";
+        break;
+      case IntNode(value: final value):
+        code += "$value";
+        break;
+      case FuncCallNode(name: final name, args: final args):
+        switch (name) {
+          case "print":
+            compilePrint(args);
+        }
+        break;
+      case VarRefNode(name: final name):
+        vars.containsKey(name)
+            ? code += name
+            : throw Exception("Variable not declared $name");
+        break;
+
+      case VarDeclNode(name: final name, type: final type, value: final value):
+        if (value == null && type == null) {
+          throw Exception("Variable $name must have a type or a value");
+        }
+        if (type == null) {
+          code += "auto $name";
+          vars[name] = typeFromNode(value!); // ! unreachable
+        } else {
+          vars[name] = type.toCType();
+          code += "${type.toCType()} $name";
+        }
+        if (value != null) {
+          code += " = ";
           compileNode(value);
-          code += ";\n";
-          break;
-        default:
-          break;
-      }
+        }
+        code += ";\n";
+        break;
+      case VarAssignNode(name: final name, value: final value):
+        code += "$name = ";
+        compileNode(value);
+        code += ";\n";
+        break;
+      default:
+        break;
+    }
   }
 
   void compilePrint(List<ASTNode> args) {
@@ -71,7 +74,9 @@ class Compiler {
           fmt += "%d";
           break;
         case VarRefNode(name: final name):
-          final type = vars.containsKey(name) ? vars[name]! : throw Exception("Variable not declared $name");
+          final type = vars.containsKey(name)
+              ? vars[name]!
+              : throw Exception("Variable not declared $name");
           fmt += getFmt(type);
           break;
         default:
@@ -87,7 +92,6 @@ class Compiler {
     code += ");\n";
   }
 
-
   void addDependencies() {
     for (var n in nodes) {
       if (n is FuncCallNode) {
@@ -100,15 +104,11 @@ class Compiler {
         }
       } else if (n is VarDeclNode) {
         switch (n.type) {
-          case KebabType.i8:
-          case KebabType.i16:
-          case KebabType.i32:
-          case KebabType.i64:
-          case KebabType.u8:
-          case KebabType.u16:
-          case KebabType.u32:
-          case KebabType.u64:
+          case NumType():
             code += "#include <stdint.h>\n";
+            break;
+          case Str():
+            code += "#include <string.h>";
             break;
           default:
             break;
@@ -119,8 +119,10 @@ class Compiler {
 
   String typeFromNode(ASTNode node) {
     switch (node) {
-      case IntNode(): return "int32_t";
-      case OpNode(): return "int32_t";
+      case IntNode():
+        return "int32_t";
+      case OpNode():
+        return "int32_t";
       case VarRefNode(name: final name):
         if (vars.containsKey(name)) {
           return vars[name]!;
@@ -133,7 +135,7 @@ class Compiler {
   }
 
   String getFmt(String type) {
-    switch(type) {
+    switch (type) {
       case "int8_t":
       case "int16_t":
       case "int32_t":

@@ -27,7 +27,9 @@ class Parser {
       pos++;
       return token;
     }
-    throw Exception("Expected $type($value) but got ${token?.type}(${token?.value}) at $pos");
+    throw Exception(
+      "Expected $type($value) but got ${token?.type}(${token?.value}) at $pos",
+    );
   }
 
   bool expect(TokenType type) {
@@ -73,7 +75,8 @@ class Parser {
           if (!expectWithValue(TokenType.rParen, ')')) {
             final List<ASTNode> args = [];
             while (!expectWithValue(TokenType.rParen, ')')) {
-              if (expectWithValue(TokenType.comma, ',')) consume(TokenType.comma);
+              if (expectWithValue(TokenType.comma, ','))
+                consume(TokenType.comma);
               args.add(parseExpr(0));
             }
             pos++;
@@ -120,20 +123,34 @@ class Parser {
 
   KebabType parseKebabType(String rawType) {
     switch (rawType) {
-      case "i8": return KebabType.i8;
-      case "i16": return KebabType.i16;
-      case "i32": return KebabType.i32;
-      case "i64": return KebabType.i64;
-      case "u1": return KebabType.u1;
-      case "u8": return KebabType.u8;
-      case "u16": return KebabType.u16;
-      case "u32": return KebabType.u32;
-      case "u64": return KebabType.u64;
-      case "f32": return KebabType.f32;
-      case "f64": return KebabType.f64;
-      case "char": return KebabType.char;
-      case "str": return KebabType.str;
-      default: throw Exception("Unknown kebab type");
+      case "i8":
+        return I8();
+      case "i16":
+        return I16();
+      case "i32":
+        return I32();
+      case "i64":
+        return I64();
+      case "u8":
+        return U8();
+      case "u16":
+        return U16();
+      case "u32":
+        return U32();
+      case "u64":
+        return U64();
+      case "f32":
+        return F32();
+      case "f64":
+        return F64();
+      case "char":
+        return Char();
+      case "str":
+        return Str();
+      case "bool":
+        return Bool();
+      default:
+        throw Exception("Unknown kebab type");
     }
   }
 }
