@@ -120,6 +120,9 @@ class SemanticAnalyser {
     switch (node) {
       case IntNode():
         return I32(); // default int literal is i32
+      
+      case StrNode():
+        return Str();
 
       case OpNode(left: final left, right: final right):
         final leftType = astNodeToType(left);

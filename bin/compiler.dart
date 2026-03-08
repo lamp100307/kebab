@@ -24,6 +24,9 @@ class Compiler {
       case IntNode(value: final value):
         code += "$value";
         break;
+      case StrNode(value: final value):
+        code += "\"$value\"";
+        break;
       case FuncCallNode(name: final name, args: final args):
         switch (name) {
           case "print":
@@ -69,6 +72,9 @@ class Compiler {
       switch (arg) {
         case IntNode():
           fmt += "%d";
+          break;
+        case StrNode():
+          fmt += "%s";
           break;
         case OpNode():
           fmt += "%d";
@@ -121,6 +127,8 @@ class Compiler {
     switch (node) {
       case IntNode():
         return "int32_t";
+      case StrNode():
+        return "string";
       case OpNode():
         return "int32_t";
       case VarRefNode(name: final name):

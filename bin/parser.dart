@@ -68,6 +68,9 @@ class Parser {
       case TokenType.num:
         pos++;
         return IntNode(int.parse(token.value));
+      case TokenType.str:
+        pos++;
+        return StrNode(token.value);
       case TokenType.id:
         pos++;
         if (expectWithValue(TokenType.lParen, '(')) {
@@ -75,8 +78,7 @@ class Parser {
           if (!expectWithValue(TokenType.rParen, ')')) {
             final List<ASTNode> args = [];
             while (!expectWithValue(TokenType.rParen, ')')) {
-              if (expectWithValue(TokenType.comma, ','))
-                consume(TokenType.comma);
+              if (expectWithValue(TokenType.comma, ',')) consume(TokenType.comma);
               args.add(parseExpr(0));
             }
             pos++;

@@ -66,6 +66,16 @@ class Lexer {
           tokens.add(Token(TokenType.assign, c));
           pos += 1;
           break;
+        case '"':
+          String str = '';
+          pos += 1;
+          while (pos < input.length && input[pos] != '"') {
+            str += input[pos];
+            pos += 1;
+          }
+          pos += 1;
+          tokens.add(Token(TokenType.str, str));
+          break;
         default:
           bool isAlphaNumeric(String c) =>
               c.codeUnitAt(0) >= 'a'.codeUnitAt(0) &&
