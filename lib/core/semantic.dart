@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:kebab/ast_node.dart';
+import 'ast_node.dart';
 
 class SemanticAnalyser {
   final List<ASTNode> nodes;
@@ -113,14 +113,14 @@ class SemanticAnalyser {
   KebabType analyseFuncCall(String name, List<ASTNode> args) {
     // TODO: implement function call analysis
     // For now, assume it returns i32
-    return I32();
+    throw UnimplementedError;
   }
 
   KebabType astNodeToType(ASTNode node) {
     switch (node) {
       case IntNode():
         return I32(); // default int literal is i32
-      
+
       case StrNode():
         return Str();
 

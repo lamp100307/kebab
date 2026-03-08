@@ -1,4 +1,4 @@
-import 'package:kebab/token.dart';
+import 'token.dart';
 
 class Lexer {
   static const keywords = ['let'];

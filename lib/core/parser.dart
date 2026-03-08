@@ -1,5 +1,5 @@
-import 'package:kebab/token.dart';
-import 'package:kebab/ast_node.dart';
+import 'ast_node.dart';
+import 'token.dart';
 
 class Parser {
   List<ASTNode> nodes = [];
@@ -78,7 +78,9 @@ class Parser {
           if (!expectWithValue(TokenType.rParen, ')')) {
             final List<ASTNode> args = [];
             while (!expectWithValue(TokenType.rParen, ')')) {
-              if (expectWithValue(TokenType.comma, ',')) consume(TokenType.comma);
+              if (expectWithValue(TokenType.comma, ',')) {
+                consume(TokenType.comma);
+              }
               args.add(parseExpr(0));
             }
             pos++;

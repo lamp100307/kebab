@@ -1,70 +1,79 @@
-abstract class ASTNode {}
+abstract base class ASTNode {}
 
-sealed class KebabType {
+abstract interface class KebabType {
   String toCType();
 }
 
-sealed class NumType extends KebabType {}
-sealed class FloatType extends KebabType {}
+sealed class NumType implements KebabType {}
 
-class I8 extends NumType {
+sealed class FloatType implements KebabType {}
+
+class I8 implements NumType {
   @override
   String toCType() => "int8_t";
 }
-class I16 extends NumType {
+
+class I16 implements NumType {
   @override
   String toCType() => "int16_t";
 }
-class I32 extends NumType {
+
+class I32 implements NumType {
   @override
   String toCType() => "int32_t";
 }
-class I64 extends NumType {
+
+class I64 implements NumType {
   @override
   String toCType() => "int64_t";
 }
 
-class U8 extends NumType {
+class U8 implements NumType {
   @override
   String toCType() => "uint8_t";
 }
-class U16 extends NumType {
+
+class U16 implements NumType {
   @override
   String toCType() => "uint16_t";
 }
-class U32 extends NumType {
+
+class U32 implements NumType {
   @override
   String toCType() => "uint32_t";
 }
-class U64 extends NumType {
+
+class U64 implements NumType {
   @override
   String toCType() => "uint64_t";
 }
 
-class F32 extends FloatType {
+class F32 implements FloatType {
   @override
   String toCType() => "float";
 }
-class F64 extends FloatType {
+
+class F64 implements FloatType {
   @override
   String toCType() => "double";
 }
 
-class Char extends KebabType {
+class Char implements KebabType {
   @override
   String toCType() => "char";
 }
-class Str extends KebabType {
+
+class Str implements KebabType {
   @override
   String toCType() => "string";
 }
 
-class Bool extends NumType {
+class Bool implements NumType {
   @override
   String toCType() => "bool";
 }
 
-class IntNode extends ASTNode {
+final class IntNode extends ASTNode {
   final int value;
 
   IntNode(this.value);
@@ -73,7 +82,7 @@ class IntNode extends ASTNode {
   String toString() => value.toString();
 }
 
-class StrNode extends ASTNode {
+final class StrNode extends ASTNode {
   final String value;
 
   StrNode(this.value);
@@ -82,7 +91,7 @@ class StrNode extends ASTNode {
   String toString() => "\"$value\"";
 }
 
-class OpNode extends ASTNode {
+final class OpNode extends ASTNode {
   final ASTNode left;
   final String op;
   final ASTNode right;
@@ -93,7 +102,7 @@ class OpNode extends ASTNode {
   String toString() => "$left $op $right";
 }
 
-class FuncCallNode extends ASTNode {
+final class FuncCallNode extends ASTNode {
   final String name;
   final List<ASTNode> args;
 
@@ -103,7 +112,7 @@ class FuncCallNode extends ASTNode {
   String toString() => "$name(${args.join(', ')})";
 }
 
-class VarDeclNode extends ASTNode {
+final class VarDeclNode extends ASTNode {
   final String name;
   final KebabType? type;
   final ASTNode? value;
@@ -114,7 +123,7 @@ class VarDeclNode extends ASTNode {
   String toString() => "$name: $type = $value;";
 }
 
-class VarRefNode extends ASTNode {
+final class VarRefNode extends ASTNode {
   final String name;
 
   VarRefNode(this.name);
@@ -123,7 +132,7 @@ class VarRefNode extends ASTNode {
   String toString() => name;
 }
 
-class VarAssignNode extends ASTNode {
+final class VarAssignNode extends ASTNode {
   final String name;
   final ASTNode value;
 

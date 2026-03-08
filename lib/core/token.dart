@@ -1,6 +1,6 @@
 enum TokenType { id, key, num, str, op, lParen, rParen, comma, colon, assign }
 
-class Token {
+base class Token {
   TokenType type;
   String value;
   Token(this.type, this.value);

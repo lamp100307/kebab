@@ -1,25 +1,22 @@
-Kebab Language 🍢
+# Kebab Language: 
 
-    Write Fast, Run Faster!
+## Main info
 
-Kebab is a statically typed programming language that compiles to C. This means you get C-like performance (because that's what ultimately runs) with a more convenient and safer syntax.\
+Write Fast, Run Faster!
+
+Kebab is a statically typed programming language that compiles to C. This means you get C-like performance (because that's what ultimately runs) with a more convenient and safer syntax.
 🌟 Key Features
 
-    ⚡ C-like Speed - compilation to C delivers performance comparable to native code
+    - ⚡ C-like Speed - compilation to C delivers performance comparable to native code
+    - 🔒 Type Safety - strong static typing prevents entire classes of bugs at compile time
+    - 🔄 Seamless Interop - easily integrates with any language that can call C (which is almost all of them!)
+    - 🛡️ Unsafe Blocks - drop down to low-level control when you need it with unsafe sections
+    - 🎯 Clean Syntax - modern and readable without unnecessary ceremony
+    - 🧠 Type Inference - let the compiler figure out types when you don't want to spell them out
 
-    🔒 Type Safety - strong static typing prevents entire classes of bugs at compile time
+## 📦 Example Code
 
-    🔄 Seamless Interop - easily integrates with any language that can call C (which is almost all of them!)
-
-    🛡️ Unsafe Blocks - drop down to low-level control when you need it with unsafe sections
-
-    🎯 Clean Syntax - modern and readable without unnecessary ceremony
-
-    🧠 Type Inference - let the compiler figure out types when you don't want to spell them out
-
-📦 Example Code\
 ```kebab
-
 // Simple expression
 print(1 + 2 * 4)  // Output: 9
 
@@ -49,12 +46,14 @@ unsafe {
 }
 ```
 
-🚀 Quick Start\
-Building from Source\
+## 🚀 Quick Start
+
+Building from Source
+
 ```bash
 
 # Clone the repository
-git clone https://github.com/yourusername/kebab
+git clone https://github.com/lamp100307/kebab
 cd kebab
 
 # Compile the compiler (yes, it's self-hosted!)
@@ -64,16 +63,13 @@ dart compile exe bin/kebab.dart -o kebab
 sudo mv kebab /usr/local/bin/
 
 Installation Options
-
     GitHub Releases - download pre-built binaries from the latest release
-
     AUR (Arch Linux) - coming soon!
-
-    Homebrew (macOS) - planned
 ```
-Running Your First Program
-```bash
 
+## Running Your First Program
+
+```bash
 # Create a test file
 echo 'print("Hello, Kebab!")' > hello.keb
 
@@ -84,23 +80,16 @@ kebab hello.keb
 # Or in one line
 kebab hello.keb && ./hello
 ```
-🎯 Why Kebab?\
+
+## 🎯 Why Kebab?
 Perfect For:
-
-    Systems Programming - with unsafe blocks when you need them
-
-    Embedded Systems - tiny footprint, C interoperability
-
-    Learning Compilers - clean codebase, easy to understand
-
-    Performance-Critical Apps - C-level speed with modern syntax
+    - Systems Programming - with unsafe blocks when you need them
+    - Embedded Systems - tiny footprint, C interoperability
+    - Learning Compilers - clean codebase, easy to understand
+    - Performance-Critical Apps - C-level speed with modern syntax
 
 What Makes Kebab Special:
-
-    Compiles to C - battle-tested backend, amazing optimization
-
-    Gradual Unsafety - safe by default, unsafe when necessary
-
-    Predictable Performance - no hidden GC or runtime overhead
-
-    Small Runtime - what you write is what runs
+    - Compiles to C - battle-tested backend, amazing optimization
+    - Gradual Unsafety - safe by default, unsafe when necessary
+    - Predictable Performance - no hidden GC or runtime overhead
+    - Small Runtime - what you write is what runs

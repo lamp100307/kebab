@@ -1,15 +1,18 @@
 name: kebab
-description: A sample command-line application.
-version: 1.0.0
-# repository: https://github.com/my_org/my_repo
+description: Kebab programming language.
+version: 0.1.0
+repository: https://github.com/lamp100307/kebab
 
 environment:
   sdk: ^3.10.1
 
-# Add regular dependencies here.
 dependencies:
   path: ^1.9.0
 
 dev_dependencies:
   lints: ^6.0.0
   test: ^1.25.6
+  import_sorter: ^4.6.0
+
+import_sorter:
+  comments: false

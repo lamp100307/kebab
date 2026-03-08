@@ -1,4 +1,4 @@
-import 'package:kebab/ast_node.dart';
+import 'ast_node.dart';
 
 class Compiler {
   List<ASTNode> nodes = [];

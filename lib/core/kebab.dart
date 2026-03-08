@@ -1,31 +1,30 @@
 import 'dart:io';
 
-import './lexer.dart';
-import 'package:kebab/token.dart';
-
-import './parser.dart';
-import 'package:kebab/ast_node.dart';
-
-import './semantic.dart';
-
-import './compiler.dart';
+import 'ast_node.dart';
+import 'compiler.dart';
+import 'lexer.dart';
+import 'parser.dart';
+import 'semantic.dart';
+import 'token.dart';
 
 void main(List<String> arguments) {
   final code = File(arguments[0]).readAsStringSync();
   final debug = arguments.length > 1 && arguments[1] == 'debug';
 
   final List<Token> tokens = Lexer.tokenize(code);
-  if (debug)
+  if (debug) {
     for (var token in tokens) {
       print(token.toString());
     }
+  }
 
   final Parser parser = Parser(tokens);
   final List<ASTNode> nodes = parser.parse();
-  if (debug)
+  if (debug) {
     for (var node in nodes) {
       print(node.toString());
     }
+  }
 
   final SemanticAnalyser semantic = SemanticAnalyser(nodes);
   semantic.analyse();
