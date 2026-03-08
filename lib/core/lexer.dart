@@ -2,22 +2,18 @@ import 'token.dart';
 
 class Lexer {
   static const keywords = ['let'];
-  static List<Token> tokenize(String input) {
+
+  final String input;
+
+  const Lexer(this.input);
+
+  List<Token> tokenize() {
     int pos = 0;
     final List<Token> tokens = [];
     while (pos < input.length) {
       final String c = input[pos];
       switch (c) {
-        case '0':
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9':
+        case '0' || '1' || '2' || '3' || '4' || '5' || '6' || '7' || '8' || '9':
           String num = '';
           while (pos < input.length && input[pos].codeUnitAt(0) ^ 48 <= 9) {
             num += input[pos];
@@ -25,9 +21,7 @@ class Lexer {
           }
           tokens.add(Token(TokenType.num, num));
           break;
-        case '+':
-        case '-':
-        case '*':
+        case '+' || '-' || '*':
           tokens.add(Token(TokenType.op, c));
           pos += 1;
           break;
@@ -40,10 +34,7 @@ class Lexer {
             tokens.add(Token(TokenType.op, c));
           }
 
-        case '\n':
-        case '\r':
-        case '\t':
-        case ' ':
+        case '\n' || '\r' || '\t' || ' ':
           pos += 1;
           break;
         case '(':
