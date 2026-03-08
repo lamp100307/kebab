@@ -1,4 +1,14 @@
-import 'package:kebab/config.dart';
+import 'dart:io' show exit;
 
-void main(List<String> arguments) =>
-    Config.fromArgs(arguments).executeCommand();
+import 'package:args/command_runner.dart' show UsageException;
+import 'package:kebab/commands/commands.dart';
+
+void main(List<String> args) async {
+  final runner = CommandRunner();
+  try {
+    await runner.run(args);
+  } on UsageException catch (e, _) {
+    print(e);
+    exit(1);
+  }
+}

@@ -4,7 +4,7 @@ import 'package:kebab/config.dart';
 import 'package:kebab/core/core.dart';
 import 'commands.dart';
 
-final class CommandBuild implements Command {
+final class CommandBuild implements ICommand {
   @override
   final Config config;
   final File intermediateFile;

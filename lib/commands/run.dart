@@ -5,7 +5,7 @@ import 'package:kebab/config.dart';
 
 import 'commands.dart';
 
-final class CommandRun implements Command {
+final class CommandRun implements ICommand {
   @override
   final Config config;
 
