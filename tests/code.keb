@@ -1,2 +1,10 @@
-let x = 1
-print(x == 0 || x != 1)
+let x = 2
+x = x * x
+print("X is: ", x, "\n")
+if x < 4 {
+    print("Error")
+} else if x == 4 {
+    print("Success")
+} else {
+    print("Error")
+}

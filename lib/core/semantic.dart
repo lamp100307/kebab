@@ -33,6 +33,16 @@ class SemanticAnalyser {
         _analyseFuncCall(name, args);
         break;
 
+      case IfNode(condition: final cond, thenBlock: final then, elseBlock: final elseBlock):
+        _analyseIfNode(cond, then, elseBlock);
+        break;
+
+      case BlockNode(statements: final statements):
+        for (var statement in statements) {
+          _analyseNode(statement);
+        }
+        break;
+
       case IntNode():
       case VarRefNode():
         // leaf nodes are handled in expressions
@@ -40,6 +50,18 @@ class SemanticAnalyser {
 
       default:
         errors.add(SemanticUnknownNodeType(node.runtimeType.toString()));
+    }
+  }
+
+  void _analyseIfNode(
+    final ASTNode cond,
+    final ASTNode then,
+    final ASTNode? else_
+  ) {
+    _analyseNode(cond);
+    _analyseNode(then);
+    if (else_ != null) {
+      _analyseNode(else_);
     }
   }
 

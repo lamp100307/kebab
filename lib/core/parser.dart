@@ -101,6 +101,14 @@ class Parser {
         final expr = _parseExpr(0);
         _consumeWithValue(TokenType.rParen, ')');
         return expr;
+      case TokenType.lBrace:
+        pos++;
+        final List<ASTNode> stmts = [];
+        while (pos < tokens.length && !_expectWithValue(TokenType.rBrace, '}')) {
+          stmts.add(_parseExpr(0));
+        }
+        pos++;
+        return BlockNode(stmts);
       case TokenType.key:
         switch (token.value) {
           case "let":
@@ -117,6 +125,35 @@ class Parser {
               value = _parseExpr(0);
             }
             return VarDeclNode(name, type, value);
+          case 'if':
+            pos++;
+            final condition = _parseExpr(0);
+            final thenBlock = _parseExpr(0);
+            final List<ElifNode> elifs = [];
+            ASTNode? elseBlock;
+            
+            while (pos < tokens.length && _expect(TokenType.key)) {
+              final keyword = tokens[pos].value;
+              
+              if (keyword == 'else') {
+                pos++;
+                if (pos < tokens.length && 
+                    tokens[pos].type == TokenType.key && 
+                    tokens[pos].value == 'if') {
+                  pos++; 
+                  final elifCondition = _parseExpr(0);
+                  final elifBlock = _parseExpr(0);
+                  elifs.add(ElifNode(elifCondition, elifBlock));
+                } else {
+                  elseBlock = _parseExpr(0);
+                  break; 
+                }
+              } else {
+                break; 
+              }
+            }
+            
+            return IfNode(condition, thenBlock, elifs, elseBlock);
           default:
             throw ParserUnknownKeywordException(token.value);
         }

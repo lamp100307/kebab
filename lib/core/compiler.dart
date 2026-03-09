@@ -61,6 +61,40 @@ class Compiler {
         _compileNode(value);
         code += ";\n";
         break;
+      case IfNode(condition: final condition, thenBlock: final thenBlock, elifs: final elifs, elseBlock: final elseBlock):
+        code += "if (";
+        _compileNode(condition);
+        code += ")";
+        
+        _compileNode(thenBlock);
+        
+        for (var elif in elifs) {
+          code += " else if (";
+          _compileNode(elif.condition);
+          code += ")";
+          _compileNode(elif.block);
+        }
+        
+        if (elseBlock != null) {
+          code += " else ";
+          _compileNode(elseBlock);
+        }
+        break;
+
+      case ElifNode(condition: final condition, block: final block):
+        code += " else if (";
+        _compileNode(condition);
+        code += ")";
+        _compileNode(block);
+        break;
+
+      case BlockNode(statements: final statements):
+        code += "{\n";
+        for (var statement in statements) {
+          _compileNode(statement);
+        }
+        code += "}\n";
+        break;
       default:
         break;
     }

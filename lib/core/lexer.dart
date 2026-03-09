@@ -4,7 +4,7 @@ import 'package:kebab/exceptions/exceptions.dart'
 import 'token.dart';
 
 class Lexer {
-  static const keywords = ['let'];
+  static const keywords = ['let', 'if', 'else'];
 
   final String input;
 
@@ -68,6 +68,14 @@ class Lexer {
           break;
         case ')':
           tokens.add(Token(TokenType.rParen, c));
+          pos += 1;
+          break;
+        case '{':
+          tokens.add(Token(TokenType.lBrace, c));
+          pos += 1;
+          break;
+        case '}':
+          tokens.add(Token(TokenType.rBrace, c));
           pos += 1;
           break;
         case ',':

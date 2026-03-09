@@ -120,7 +120,7 @@ final class VarDeclNode extends ASTNode {
   VarDeclNode(this.name, this.type, this.value);
 
   @override
-  String toString() => "$name: $type = $value;";
+  String toString() => "$name: $type = $value";
 }
 
 final class VarRefNode extends ASTNode {
@@ -137,4 +137,38 @@ final class VarAssignNode extends ASTNode {
   final ASTNode value;
 
   VarAssignNode(this.name, this.value);
+
+  @override
+  String toString() => "$name = $value";
+}
+
+final class BlockNode extends ASTNode {
+  final List<ASTNode> statements;
+
+  BlockNode(this.statements);
+
+  @override
+  String toString() => "{\n${statements.join('\n')}\n}";
+}
+
+final class IfNode extends ASTNode {
+  final ASTNode condition;
+  final ASTNode thenBlock;
+  final List<ElifNode> elifs;  // ← добавить elif'ы
+  final ASTNode? elseBlock;
+  
+  IfNode(this.condition, this.thenBlock, this.elifs, this.elseBlock);
+
+  @override
+  String toString() => "if $condition $thenBlock $elifs $elseBlock";
+}
+
+final class ElifNode extends ASTNode {
+  final ASTNode condition;
+  final ASTNode block;
+  
+  ElifNode(this.condition, this.block);
+
+  @override
+  String toString() => "else if $condition $block";
 }
