@@ -113,7 +113,7 @@ class SemanticAnalyser {
   KebabType analyseFuncCall(String name, List<ASTNode> args) {
     // TODO: implement function call analysis
     // For now, assume it returns i32
-    throw UnimplementedError;
+    return I32();
   }
 
   KebabType astNodeToType(ASTNode node) {
