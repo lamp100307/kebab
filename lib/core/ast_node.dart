@@ -172,3 +172,15 @@ final class ElifNode extends ASTNode {
   @override
   String toString() => "else if $condition $block";
 }
+
+final class ForNode extends ASTNode {
+  final ASTNode? init;
+  final ASTNode condition;
+  final ASTNode? update;
+  final ASTNode block;
+  
+  ForNode(this.init, this.condition, this.update, this.block);
+
+  @override
+  String toString() => "for $init ; $condition ; $update $block";
+}

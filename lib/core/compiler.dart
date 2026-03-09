@@ -16,7 +16,7 @@ class Compiler {
     return code;
   }
 
-  void _compileNode(final ASTNode node) {
+  void _compileNode(final ASTNode node, [final bool noSemicolon = false]) {
     switch (node) {
       case OpNode(left: final left, op: final op, right: final right):
         code += "$left $op $right";
@@ -54,12 +54,12 @@ class Compiler {
           code += " = ";
           _compileNode(value);
         }
-        code += ";\n";
+        code += noSemicolon ? "\n" : ";\n";
         break;
       case VarAssignNode(name: final name, value: final value):
         code += "$name = ";
         _compileNode(value);
-        code += ";\n";
+        code += noSemicolon ? "\n" : ";\n";
         break;
       case IfNode(condition: final condition, thenBlock: final thenBlock, elifs: final elifs, elseBlock: final elseBlock):
         code += "if (";
@@ -94,6 +94,20 @@ class Compiler {
           _compileNode(statement);
         }
         code += "}\n";
+        break;
+      case ForNode(init: final init, condition: final condition, update: final update, block: final block):
+        code += "for (";
+        if (init != null) {
+          _compileNode(init, true);
+        }
+        code += "; ";
+        _compileNode(condition, true);
+        code += "; ";
+        if (update != null) {
+          _compileNode(update, true);
+        }
+        code += ")";
+        _compileNode(block);
         break;
       default:
         break;

@@ -43,6 +43,15 @@ class SemanticAnalyser {
         }
         break;
 
+      case ForNode(init: final init, condition: final condition, update: final update, block: final block): 
+        if (init != null) {
+          _analyseNode(init);
+        }
+        _analyseNode(condition);
+        if (update != null) {
+          _analyseNode(update);
+        }
+        _analyseNode(block);
       case IntNode():
       case VarRefNode():
         // leaf nodes are handled in expressions
@@ -121,6 +130,7 @@ class SemanticAnalyser {
     final String op,
     final ASTNode right,
   ) {
+    
     final leftType = _astNodeToType(left);
     final rightType = _astNodeToType(right);
 
@@ -141,8 +151,12 @@ class SemanticAnalyser {
 
   // TODO: implement function call analysis
   // For now, assume it returns i32
-  KebabType _analyseFuncCall(final String name, final List<ASTNode> args) =>
-      I32();
+  KebabType _analyseFuncCall(final String name, final List<ASTNode> args) {
+    for (final arg in args) {
+      _analyseNode(arg);
+    }
+    return I32();
+  }
 
   KebabType _astNodeToType(final ASTNode node) {
     switch (node) {

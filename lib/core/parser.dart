@@ -154,6 +154,21 @@ class Parser {
             }
             
             return IfNode(condition, thenBlock, elifs, elseBlock);
+          case 'for':
+            pos++;
+            ASTNode? init;
+            if (!_expectWithValue(TokenType.semicolon, ';')) {
+              init = _parseExpr(0);
+            }
+            _consumeWithValue(TokenType.semicolon, ';');
+            final condition = _parseExpr(0);
+            _consumeWithValue(TokenType.semicolon, ';');
+            ASTNode? update;
+            if (!_expectWithValue(TokenType.rBrace, '}')) {
+              update = _parseExpr(0);
+            }
+            final block = _parseExpr(0);
+            return ForNode(init, condition, update, block);
           default:
             throw ParserUnknownKeywordException(token.value);
         }

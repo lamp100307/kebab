@@ -1,4 +1,4 @@
-enum TokenType { id, key, num, str, op, lParen, rParen, lBrace, rBrace, comma, colon, assign }
+enum TokenType { id, key, num, str, op, lParen, rParen, lBrace, rBrace, comma, colon, semicolon, assign }
 
 base class Token {
   TokenType type;
