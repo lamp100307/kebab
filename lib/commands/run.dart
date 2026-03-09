@@ -17,7 +17,7 @@ final class CommandRun implements ICommand {
       CommandBuild(config).execute();
     }
 
-    final runResult = Process.runSync(config.outputFile.toString(), []);
+    final runResult = Process.runSync(config.outputFile.path, []);
 
     if (runResult.exitCode == 0) {
       print(runResult.stdout);

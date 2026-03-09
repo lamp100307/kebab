@@ -10,7 +10,7 @@ final class CommandBuild implements ICommand {
   final File intermediateFile;
 
   CommandBuild(this.config)
-    : intermediateFile = File('${config.outputFile.path}.inter');
+    : intermediateFile = File('${config.outputFile.path}.c');
 
   void _debugPrint(Object item) {
     if (config.debug) {
@@ -48,16 +48,18 @@ final class CommandBuild implements ICommand {
 
   void _compile() {
     final compileResult = Process.runSync('tcc', [
-      intermediateFile.toString(),
+      intermediateFile.path,
       '-o',
-      config.outputFile.toString(),
+      config.outputFile.path,
     ]);
 
     if (compileResult.exitCode != 0) {
       print('❌ Compilation failed:\n${compileResult.stderr}');
     }
 
-    intermediateFile.deleteSync();
+    if (!config.debug) {
+      intermediateFile.deleteSync();
+    }
   }
 
   @override

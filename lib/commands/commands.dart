@@ -66,7 +66,7 @@ abstract class Command extends runner.Command<void> {
     // kebab run -i input.keb -o output.file (named)
     final path = argResults?['output'] as String?;
 
-    return File(path ?? '${inputFile.path}.out');
+    return File(path ?? inputFile.path.split('.').first);
   }
 }
 
