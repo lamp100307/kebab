@@ -1,3 +1,5 @@
+import 'package:kebab/exceptions/exceptions.dart';
+
 import 'ast_node.dart';
 import 'token.dart';
 
@@ -18,7 +20,7 @@ class Parser {
       pos++;
       return token;
     }
-    throw Exception("Expected $type but got ${token?.type} at $pos");
+    throw ParserUnexpectedTokenException(type, token!.value, token.type);
   }
 
   Token _consumeWithValue(final TokenType type, final String value) {
@@ -27,9 +29,7 @@ class Parser {
       pos++;
       return token;
     }
-    throw Exception(
-      "Expected $type($value) but got ${token?.type}(${token?.value}) at $pos",
-    );
+    throw ParserUnexpectedTokenException(type, token!.value, token.type);
   }
 
   bool _expect(final TokenType type) {
@@ -118,10 +118,10 @@ class Parser {
             }
             return VarDeclNode(name, type, value);
           default:
-            throw UnsupportedError("Unsupported keyword ${token.value}");
+            throw ParserUnknownKeywordException(token.value);
         }
       default:
-        throw Exception("Unexpected token ${token.type} at $pos");
+        throw ParserUnexpectedTokenException(token.type, token.value);
     }
   }
 
@@ -154,7 +154,7 @@ class Parser {
       case "bool":
         return Bool();
       default:
-        throw Exception("Unknown kebab type");
+        throw ParserUnknownTypeException(rawType);
     }
   }
 }

@@ -45,28 +45,24 @@ abstract class Command extends runner.Command<void> {
   bool get debug => globalResults?['debug'] as bool? ?? false;
 
   File get inputFile {
-    // kebab run input.keb (position)
-    if (argResults?.rest.isNotEmpty ?? false) {
-      return File(argResults!.rest.first);
-    }
-
-    // kebab run -i input.keb (named)
-    final path = argResults?['input'] as String?;
+    final path = argResults?.rest.isNotEmpty ?? false
+        ? argResults!.rest[0] // kebab run input.keb (position)
+        : argResults?['input']; // kebab run -i input.keb (named)
 
     if (path == null) throw ArgumentError('Input file is required');
-    return File(path);
+    final file = File(path);
+
+    if (!file.existsSync()) throw ArgumentError('Input file not exists: $path');
+    return file;
   }
 
   File get outputFile {
-    // kebab run input.keb output.file (position)
-    if ((argResults?.rest.length ?? 0) > 1) {
-      return File(argResults!.rest[1]);
-    }
+    final path = (argResults?.rest.length ?? 0) > 1
+        ? argResults!.rest[1] // kebab run input.keb output.file (position)
+        : argResults?['output']; // kebab run -i input.keb -o output.file (named)
 
-    // kebab run -i input.keb -o output.file (named)
-    final path = argResults?['output'] as String?;
-
-    return File(path ?? inputFile.path.split('.').first);
+    return File(path ?? inputFile.path.split('.').first)
+      ..createSync(recursive: true);
   }
 }
 
@@ -99,11 +95,7 @@ class BuildCommand extends Command {
     argParser
       ..addOption('input', abbr: 'i', help: 'Input file path')
       ..addOption('output', abbr: 'o', help: 'Output file path')
-      ..addFlag(
-        'release',
-        abbr: 'r',
-        help: 'Build in release mode',
-      );
+      ..addFlag('release', abbr: 'r', help: 'Build in release mode');
   }
 
   @override

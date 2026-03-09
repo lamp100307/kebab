@@ -1,3 +1,6 @@
+import 'package:kebab/exceptions/exceptions.dart'
+    show LexerUnexpectedCharacterException;
+
 import 'token.dart';
 
 class Lexer {
@@ -93,8 +96,7 @@ class Lexer {
             }
             tokens.add(Token(TokenType.id, id));
           } else {
-            //! For lynx20wz. After you make new error system, place here normal exception.
-            throw Exception('Unknown character: $c');
+            throw LexerUnexpectedCharacterException(c);
           }
       }
     }

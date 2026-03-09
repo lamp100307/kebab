@@ -54,11 +54,21 @@ final class CommandBuild implements ICommand {
     ]);
 
     if (compileResult.exitCode != 0) {
-      print('❌ Compilation failed:\n${compileResult.stderr}');
+      print('Compilation failed:\n${compileResult.stderr}');
     }
 
     if (!config.debug) {
       intermediateFile.deleteSync();
+    }
+  }
+
+  void _analyseAndTrowsExceptions(final List<ASTNode> nodes) {
+    final SemanticAnalyser analyser = SemanticAnalyser(nodes);
+    analyser.analyse();
+    if (analyser.errors.isNotEmpty) {
+      throw Exception(
+        'Semantic analysis failed: ${analyser.errors.join('\n')}',
+      );
     }
   }
 
@@ -68,7 +78,7 @@ final class CommandBuild implements ICommand {
 
     final tokens = _getTokens(code);
     final nodes = _getNodes(tokens);
-    SemanticAnalyser(nodes).analyse();
+    _analyseAndTrowsExceptions(nodes);
     final output = _getReadyCode(nodes);
 
     intermediateFile.writeAsStringSync(output);

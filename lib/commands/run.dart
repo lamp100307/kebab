@@ -13,9 +13,7 @@ final class CommandRun implements ICommand {
 
   @override
   void execute() {
-    if (!config.outputFile.existsSync()) {
-      CommandBuild(config).execute();
-    }
+    CommandBuild(config).execute();
 
     final runResult = Process.runSync(config.outputFile.path, []);
 

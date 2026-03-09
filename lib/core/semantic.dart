@@ -1,24 +1,17 @@
-import 'dart:io';
+import 'package:kebab/exceptions/exceptions.dart';
 
 import 'ast_node.dart';
 
 class SemanticAnalyser {
   final List<ASTNode> nodes;
   final Map<String, KebabType> variables = {}; // symbol-table
-  final List<String> errors = [];
+  final List<SemanticException> errors = [];
 
   SemanticAnalyser(this.nodes);
 
   void analyse() {
     for (var node in nodes) {
       _analyseNode(node);
-    }
-
-    if (errors.isNotEmpty) {
-      for (var error in errors) {
-        print('Semantic error: $error');
-      }
-      exit(1);
     }
   }
 
@@ -46,7 +39,7 @@ class SemanticAnalyser {
         break;
 
       default:
-        errors.add('Unknown node type: ${node.runtimeType}');
+        errors.add(SemanticUnknownNodeType(node.runtimeType.toString()));
     }
   }
 
@@ -57,7 +50,7 @@ class SemanticAnalyser {
   ) {
     // checking for a repeat declaration
     if (variables.containsKey(name)) {
-      errors.add('Variable "$name" already declared');
+      errors.add(SemanticVarAlreadyDefinedException(name));
       return;
     }
 
@@ -67,7 +60,7 @@ class SemanticAnalyser {
       if (type != null) {
         // checking for typing compatible
         if (!_areTypesCompatible(type, valueType)) {
-          errors.add('Type mismatch: cannot assign $valueType to $type');
+          errors.add(SemanticTypeMismatchException(type, valueType));
         }
         variables[name] = type;
       } else {
@@ -76,7 +69,11 @@ class SemanticAnalyser {
       }
     } else {
       if (type == null) {
-        errors.add('Variable "$name" must have type or initializer');
+        errors.add(
+          SemanticVarInitException(
+            'Variable "$name" must have type or initializer',
+          ),
+        );
       } else {
         variables[name] = type;
       }
@@ -85,7 +82,7 @@ class SemanticAnalyser {
 
   void _analyseVarAssign(final String name, final ASTNode value) {
     if (!variables.containsKey(name)) {
-      errors.add('Variable "$name" not declared');
+      errors.add(SemanticVarNotDefinedException(name));
       return;
     }
 
@@ -93,7 +90,7 @@ class SemanticAnalyser {
     final valueType = _astNodeToType(value);
 
     if (!_areTypesCompatible(varType, valueType)) {
-      errors.add('Type mismatch: cannot assign $valueType to $varType');
+      errors.add(SemanticTypeMismatchException(varType, valueType));
     }
   }
 
@@ -108,21 +105,22 @@ class SemanticAnalyser {
     // checking for numeric types for arithmetic
     if (op == '+' || op == '-' || op == '*' || op == '/') {
       if (leftType is! NumType && leftType is! FloatType) {
-        errors.add('Left operand of $op must be numeric, got $leftType');
+        errors.add(SemanticOpUnexpexctedTypeException(leftType, op, Side.left));
       }
       if (rightType is! NumType && rightType is! FloatType) {
-        errors.add('Right operand of $op must be numeric, got $rightType');
+        errors.add(
+          SemanticOpUnexpexctedTypeException(rightType, op, Side.right),
+        );
       }
     }
 
     return _typeFromTwo(leftType, rightType);
   }
 
-  KebabType _analyseFuncCall(final String name, final List<ASTNode> args) {
-    // TODO: implement function call analysis
-    // For now, assume it returns i32
-    return I32();
-  }
+  // TODO: implement function call analysis
+  // For now, assume it returns i32
+  KebabType _analyseFuncCall(final String name, final List<ASTNode> args) =>
+      I32();
 
   KebabType _astNodeToType(final ASTNode node) {
     switch (node) {
@@ -139,7 +137,7 @@ class SemanticAnalyser {
 
       case VarRefNode(name: final name):
         if (!variables.containsKey(name)) {
-          errors.add('Variable "$name" not declared');
+          errors.add(SemanticVarNotDefinedException(name));
           return I32(); // fallback
         }
         return variables[name]!;
@@ -154,7 +152,7 @@ class SemanticAnalyser {
         return I32(); // fallback
 
       default:
-        errors.add('Cannot get type from ${node.runtimeType}');
+        errors.add(SemanticUnknownNodeType(node.runtimeType.toString()));
         return I32(); // fallback
     }
   }
@@ -188,7 +186,7 @@ class SemanticAnalyser {
     }
 
     // if types are incompatible, return type1 as fallback
-    errors.add('Incompatible types: $type1 and $type2');
+    errors.add(SemanticIncompatibleException(type1, type2));
     return type1;
   }
 
