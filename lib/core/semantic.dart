@@ -53,6 +53,7 @@ class SemanticAnalyser {
         }
         _analyseNode(block);
       case IntNode():
+      case StrNode():
       case VarRefNode():
         // leaf nodes are handled in expressions
         break;
