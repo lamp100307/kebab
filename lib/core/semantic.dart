@@ -4,14 +4,14 @@ import 'ast_node.dart';
 
 class SemanticAnalyser {
   final List<ASTNode> nodes;
-  final Map<String, KebabType> variables = {}; // символ-таблица
+  final Map<String, KebabType> variables = {}; // symbol-table
   final List<String> errors = [];
 
   SemanticAnalyser(this.nodes);
 
   void analyse() {
     for (var node in nodes) {
-      analyseNode(node);
+      _analyseNode(node);
     }
 
     if (errors.isNotEmpty) {
@@ -22,22 +22,22 @@ class SemanticAnalyser {
     }
   }
 
-  void analyseNode(ASTNode node) {
+  void _analyseNode(ASTNode node) {
     switch (node) {
       case VarDeclNode(name: final name, type: final type, value: final value):
-        analyseVarDecl(name, type, value);
+        _analyseVarDecl(name, type, value);
         break;
 
       case VarAssignNode(name: final name, value: final value):
-        analyseVarAssign(name, value);
+        _analyseVarAssign(name, value);
         break;
 
       case OpNode(left: final left, op: final op, right: final right):
-        analyseOp(left, op, right);
+        _analyseOp(left, op, right);
         break;
 
       case FuncCallNode(name: final name, args: final args):
-        analyseFuncCall(name, args);
+        _analyseFuncCall(name, args);
         break;
 
       case IntNode():
@@ -50,24 +50,24 @@ class SemanticAnalyser {
     }
   }
 
-  void analyseVarDecl(String name, KebabType? type, ASTNode? value) {
-    // Проверка на повторное объявление
+  void _analyseVarDecl(String name, KebabType? type, ASTNode? value) {
+    // checking for a repeat declaration
     if (variables.containsKey(name)) {
       errors.add('Variable "$name" already declared');
       return;
     }
 
     if (value != null) {
-      final valueType = astNodeToType(value);
+      final valueType = _astNodeToType(value);
 
       if (type != null) {
-        // Проверка соответствия типов
-        if (!areTypesCompatible(type, valueType)) {
+        // checking for typing compatible
+        if (!_areTypesCompatible(type, valueType)) {
           errors.add('Type mismatch: cannot assign $valueType to $type');
         }
         variables[name] = type;
       } else {
-        // Вывод типа
+        // type output
         variables[name] = valueType;
       }
     } else {
@@ -79,25 +79,25 @@ class SemanticAnalyser {
     }
   }
 
-  void analyseVarAssign(String name, ASTNode value) {
+  void _analyseVarAssign(String name, ASTNode value) {
     if (!variables.containsKey(name)) {
       errors.add('Variable "$name" not declared');
       return;
     }
 
     final varType = variables[name]!;
-    final valueType = astNodeToType(value);
+    final valueType = _astNodeToType(value);
 
-    if (!areTypesCompatible(varType, valueType)) {
+    if (!_areTypesCompatible(varType, valueType)) {
       errors.add('Type mismatch: cannot assign $valueType to $varType');
     }
   }
 
-  KebabType analyseOp(ASTNode left, String op, ASTNode right) {
-    final leftType = astNodeToType(left);
-    final rightType = astNodeToType(right);
+  KebabType _analyseOp(ASTNode left, String op, ASTNode right) {
+    final leftType = _astNodeToType(left);
+    final rightType = _astNodeToType(right);
 
-    // Проверка на числовые типы для арифметики
+    // checking for numeric types for arithmetic
     if (op == '+' || op == '-' || op == '*' || op == '/') {
       if (leftType is! NumType && leftType is! FloatType) {
         errors.add('Left operand of $op must be numeric, got $leftType');
@@ -107,16 +107,16 @@ class SemanticAnalyser {
       }
     }
 
-    return typeFromTwo(leftType, rightType);
+    return _typeFromTwo(leftType, rightType);
   }
 
-  KebabType analyseFuncCall(String name, List<ASTNode> args) {
+  KebabType _analyseFuncCall(String name, List<ASTNode> args) {
     // TODO: implement function call analysis
     // For now, assume it returns i32
     return I32();
   }
 
-  KebabType astNodeToType(ASTNode node) {
+  KebabType _astNodeToType(ASTNode node) {
     switch (node) {
       case IntNode():
         return I32(); // default int literal is i32
@@ -125,9 +125,9 @@ class SemanticAnalyser {
         return Str();
 
       case OpNode(left: final left, right: final right):
-        final leftType = astNodeToType(left);
-        final rightType = astNodeToType(right);
-        return typeFromTwo(leftType, rightType);
+        final leftType = _astNodeToType(left);
+        final rightType = _astNodeToType(right);
+        return _typeFromTwo(leftType, rightType);
 
       case VarRefNode(name: final name):
         if (!variables.containsKey(name)) {
@@ -141,7 +141,7 @@ class SemanticAnalyser {
 
       case VarDeclNode(value: final value):
         if (value != null) {
-          return astNodeToType(value);
+          return _astNodeToType(value);
         }
         return I32(); // fallback
 
@@ -151,41 +151,41 @@ class SemanticAnalyser {
     }
   }
 
-  bool areTypesCompatible(KebabType target, KebabType source) {
-    // Same type
+  bool _areTypesCompatible(KebabType target, KebabType source) {
+    // Ssame type
     if (target.runtimeType == source.runtimeType) return true;
 
-    // Numeric promotion
+    // numeric promotion
     if (target is NumType && source is NumType) {
-      return true; // все числа совместимы (с потерей точности)
+      return true; // all numbers are compatible (with loss of precision)
     }
 
     if (target is FloatType && source is NumType) {
-      return true; // int может быть приведен к float
+      return true; // int can be promoted to float
     }
 
     return false;
   }
 
-  KebabType typeFromTwo(KebabType type1, KebabType type2) {
-    // Если один из типов Float, результат Float
+  KebabType _typeFromTwo(KebabType type1, KebabType type2) {
+    // if either type is Float, result is Float
     if (type1 is FloatType || type2 is FloatType) {
       if (type1 is F64 || type2 is F64) return F64();
       return F32();
     }
 
-    // Оба числа
+    // both numbers
     if (type1 is NumType && type2 is NumType) {
-      return biggerNumType(type1, type2);
+      return _biggerNumType(type1, type2);
     }
 
-    // Если типы несовместимы, возвращаем type1 как fallback
+    // if types are incompatible, return type1 as fallback
     errors.add('Incompatible types: $type1 and $type2');
     return type1;
   }
 
-  KebabType biggerNumType(NumType type1, NumType type2) {
-    // Приоритет типов (чем больше число, тем выше приоритет)
+  KebabType _biggerNumType(NumType type1, NumType type2) {
+    // Type promotion priority (higher number = higher priority)
     const priority = {
       I8: 1,
       U8: 2,

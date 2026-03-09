@@ -10,10 +10,10 @@ class Parser {
 
   Parser(this.tokens);
 
-  Token? peek() => pos < tokens.length ? tokens[pos] : null;
+  Token? _peek() => pos < tokens.length ? tokens[pos] : null;
 
-  Token consume(TokenType type) {
-    final token = peek();
+  Token _consume(TokenType type) {
+    final token = _peek();
     if (token != null && token.type == type) {
       pos++;
       return token;
@@ -21,8 +21,8 @@ class Parser {
     throw Exception("Expected $type but got ${token?.type} at $pos");
   }
 
-  Token consumeWithValue(TokenType type, String value) {
-    final token = peek();
+  Token _onsumeWithValue(TokenType type, String value) {
+    final token = _peek();
     if (token != null && token.type == type && token.value == value) {
       pos++;
       return token;
@@ -32,38 +32,38 @@ class Parser {
     );
   }
 
-  bool expect(TokenType type) {
-    final token = peek();
+  bool _expect(TokenType type) {
+    final token = _peek();
     return token != null && token.type == type;
   }
 
-  bool expectWithValue(TokenType type, String value) {
-    final token = peek();
+  bool _expectWithValue(TokenType type, String value) {
+    final token = _peek();
     return token != null && token.type == type && token.value == value;
   }
 
   List<ASTNode> parse() {
     while (pos < tokens.length) {
-      nodes.add(parseExpr(0));
+      nodes.add(_parseExpr(0));
     }
     return nodes;
   }
 
-  ASTNode parseExpr(int minPrec) {
-    var left = parseAtom();
+  ASTNode _parseExpr(int minPrec) {
+    var left = _parseAtom();
     while (pos < tokens.length) {
-      final Token op = peek()!;
+      final Token op = _peek()!;
       final int prec = opPrecedence[op.value] ?? 0;
       if (prec == 0 || prec < minPrec) break;
       pos++;
-      final right = parseExpr(prec + 1);
+      final right = _parseExpr(prec + 1);
       left = OpNode(left, op.value, right);
     }
     return left;
   }
 
-  ASTNode parseAtom() {
-    final Token token = peek()!;
+  ASTNode _parseAtom() {
+    final Token token = _peek()!;
     switch (token.type) {
       case TokenType.num:
         pos++;
@@ -73,15 +73,15 @@ class Parser {
         return StrNode(token.value);
       case TokenType.id:
         pos++;
-        if (expectWithValue(TokenType.lParen, '(')) {
+        if (_expectWithValue(TokenType.lParen, '(')) {
           pos++;
-          if (!expectWithValue(TokenType.rParen, ')')) {
+          if (!_expectWithValue(TokenType.rParen, ')')) {
             final List<ASTNode> args = [];
-            while (!expectWithValue(TokenType.rParen, ')')) {
-              if (expectWithValue(TokenType.comma, ',')) {
-                consume(TokenType.comma);
+            while (!_expectWithValue(TokenType.rParen, ')')) {
+              if (_expectWithValue(TokenType.comma, ',')) {
+                _consume(TokenType.comma);
               }
-              args.add(parseExpr(0));
+              args.add(_parseExpr(0));
             }
             pos++;
             return FuncCallNode(token.value, args);
@@ -90,31 +90,31 @@ class Parser {
             return FuncCallNode(token.value, []);
           }
         } else {
-          if (expectWithValue(TokenType.assign, '=')) {
+          if (_expectWithValue(TokenType.assign, '=')) {
             pos++;
-            return VarAssignNode(token.value, parseExpr(0));
+            return VarAssignNode(token.value, _parseExpr(0));
           }
           return VarRefNode(token.value);
         }
       case TokenType.lParen:
         pos++;
-        final expr = parseExpr(0);
-        consumeWithValue(TokenType.rParen, ')');
+        final expr = _parseExpr(0);
+        _onsumeWithValue(TokenType.rParen, ')');
         return expr;
       case TokenType.key:
         switch (token.value) {
           case "let":
             pos++;
-            final name = consume(TokenType.id).value;
+            final name = _consume(TokenType.id).value;
             KebabType? type;
-            if (expect(TokenType.colon)) {
+            if (_expect(TokenType.colon)) {
               pos++;
-              type = parseKebabType(consume(TokenType.id).value);
+              type = _parseKebabType(_consume(TokenType.id).value);
             }
             ASTNode? value;
-            if (expectWithValue(TokenType.assign, '=')) {
+            if (_expectWithValue(TokenType.assign, '=')) {
               pos++;
-              value = parseExpr(0);
+              value = _parseExpr(0);
             }
             return VarDeclNode(name, type, value);
           default:
@@ -125,7 +125,7 @@ class Parser {
     }
   }
 
-  KebabType parseKebabType(String rawType) {
+  KebabType _parseKebabType(String rawType) {
     switch (rawType) {
       case "i8":
         return I8();

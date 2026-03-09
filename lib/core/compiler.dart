@@ -1,7 +1,7 @@
 import 'ast_node.dart';
 
 class Compiler {
-  List<ASTNode> nodes = [];
+  final List<ASTNode> nodes;
   String code = "";
   Map<String, String> vars = {};
 
@@ -10,13 +10,13 @@ class Compiler {
   String compile() {
     code += "int main() {\n";
     for (var node in nodes) {
-      compileNode(node);
+      _compileNode(node);
     }
     code += "return 0;\n}\n";
     return code;
   }
 
-  void compileNode(ASTNode node) {
+  void _compileNode(ASTNode node) {
     switch (node) {
       case OpNode(left: final left, op: final op, right: final right):
         code += "$left $op $right";
@@ -30,7 +30,7 @@ class Compiler {
       case FuncCallNode(name: final name, args: final args):
         switch (name) {
           case "print":
-            compilePrint(args);
+            _compilePrint(args);
         }
         break;
       case VarRefNode(name: final name):
@@ -45,20 +45,20 @@ class Compiler {
         }
         if (type == null) {
           code += "auto $name";
-          vars[name] = typeFromNode(value!); // ! unreachable
+          vars[name] = _typeFromNode(value!); // ! unreachable
         } else {
           vars[name] = type.toCType();
           code += "${type.toCType()} $name";
         }
         if (value != null) {
           code += " = ";
-          compileNode(value);
+          _compileNode(value);
         }
         code += ";\n";
         break;
       case VarAssignNode(name: final name, value: final value):
         code += "$name = ";
-        compileNode(value);
+        _compileNode(value);
         code += ";\n";
         break;
       default:
@@ -66,7 +66,7 @@ class Compiler {
     }
   }
 
-  void compilePrint(List<ASTNode> args) {
+  void _compilePrint(List<ASTNode> args) {
     String fmt = "\"";
     for (var arg in args) {
       switch (arg) {
@@ -83,7 +83,7 @@ class Compiler {
           final type = vars.containsKey(name)
               ? vars[name]!
               : throw Exception("Variable not declared $name");
-          fmt += getFmt(type);
+          fmt += _getFmt(type);
           break;
         default:
           break;
@@ -92,7 +92,7 @@ class Compiler {
     fmt += "\"";
     code += "printf($fmt, ";
     for (int i = 0; i < args.length; i++) {
-      compileNode(args[i]);
+      _compileNode(args[i]);
       if (!(i == args.length - 1)) code += ", ";
     }
     code += ");\n";
@@ -123,7 +123,7 @@ class Compiler {
     }
   }
 
-  String typeFromNode(ASTNode node) {
+  String _typeFromNode(ASTNode node) {
     switch (node) {
       case IntNode():
         return "int32_t";
@@ -142,7 +142,7 @@ class Compiler {
     }
   }
 
-  String getFmt(String type) {
+  String _getFmt(String type) {
     switch (type) {
       case "int8_t":
       case "int16_t":
