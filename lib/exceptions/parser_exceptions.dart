@@ -1,10 +1,7 @@
 part of 'exceptions.dart';
 
-sealed class ParserException implements KebabException {
-  @override
-  final CodeLocation? location;
-
-  const ParserException([this.location]);
+sealed class ParserException extends KebabException {
+  const ParserException([super.location]);
 }
 
 final class ParserUnexpectedTokenException extends ParserException {

@@ -2,6 +2,7 @@ import 'dart:io' show File, Process;
 
 import 'package:kebab/config.dart';
 import 'package:kebab/core/core.dart';
+import 'package:kebab/exceptions/exceptions.dart';
 import 'commands.dart';
 
 final class CommandBuild implements ICommand {
@@ -66,9 +67,7 @@ final class CommandBuild implements ICommand {
     final SemanticAnalyser analyser = SemanticAnalyser(nodes);
     analyser.analyse();
     if (analyser.errors.isNotEmpty) {
-      throw Exception(
-        'Semantic analysis failed: ${analyser.errors.join('\n')}',
-      );
+      throw SemanticMultipleExceptions(analyser.errors);
     }
   }
 

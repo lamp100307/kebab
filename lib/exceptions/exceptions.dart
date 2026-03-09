@@ -31,6 +31,9 @@ class CodeLocation {
 class KebabException implements Exception {
   final CodeLocation? location;
 
+  @override
+  String toString() => "$message\n$location";
+
   String get message =>
       "Exception occurred ${location != null ? 'at $location' : ''}";
 

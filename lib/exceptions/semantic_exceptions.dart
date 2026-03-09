@@ -1,10 +1,19 @@
 part of 'exceptions.dart';
 
-sealed class SemanticException implements KebabException {
-  @override
-  final CodeLocation? location;
+sealed class SemanticException extends KebabException {
+  const SemanticException([super.location]);
+}
 
-  const SemanticException([this.location]);
+final class SemanticMultipleExceptions extends SemanticException {
+  final List<SemanticException> exceptions;
+
+  @override
+  String get message =>
+      "Semantic exceptions:\n${exceptions.map((final e) => e.toString()).join('\n')}";
+  @override
+  String toString() => message;
+
+  const SemanticMultipleExceptions(this.exceptions);
 }
 
 final class SemanticIncompatibleException extends SemanticException {

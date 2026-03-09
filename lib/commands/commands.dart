@@ -57,12 +57,20 @@ abstract class Command extends runner.Command<void> {
   }
 
   File get outputFile {
-    final path = (argResults?.rest.length ?? 0) > 1
+    String? path = (argResults?.rest.length ?? 0) > 1
         ? argResults!.rest[1] // kebab run input.keb output.file (position)
         : argResults?['output']; // kebab run -i input.keb -o output.file (named)
 
-    return File(path ?? inputFile.path.split('.').first)
-      ..createSync(recursive: true);
+    // dir: output/ => file: output/input
+    final inputFileName = inputFile.path.split('.').last;
+
+    if (path != null && path.endsWith('/')) {
+      path += inputFileName;
+    } else {
+      path ??= inputFileName;
+    }
+
+    return File(path)..createSync(recursive: true);
   }
 }
 
