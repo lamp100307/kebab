@@ -8,7 +8,7 @@ class Parser {
   List<Token> tokens;
   int pos = 0;
 
-  static const Map<String, int> opPrecedence = {"+": 1, "-": 1, "*": 2, "/": 2};
+  static const Map<String, int> opPrecedence = {"+": 1, "-": 1, "*": 2, "/": 2, "<": 3, ">": 3, "==": 3, "!=": 3, "<=": 3, ">=": 3, "&&": 4, "||": 4};
 
   Parser(this.tokens);
 

@@ -24,19 +24,41 @@ class Lexer {
           }
           tokens.add(Token(TokenType.num, num));
           break;
-        case '+' || '-' || '*':
-          tokens.add(Token(TokenType.op, c));
-          pos += 1;
+        case '+' || '-' || '*' || '<' || '>' || '!' || '&' || '|':
+          if (c == '<' && pos + 1 < input.length && input[pos + 1] == '=') {
+            tokens.add(Token(TokenType.op, '<='));
+            pos += 2;
+          } else if (c == '>' && pos + 1 < input.length && input[pos + 1] == '=') {
+            tokens.add(Token(TokenType.op, '>='));
+            pos += 2;
+          } else if (c == '=' && pos + 1 < input.length && input[pos + 1] == '=') {
+            tokens.add(Token(TokenType.op, '=='));
+            pos += 2;
+          } else if (c == '!' && pos + 1 < input.length && input[pos + 1] == '=') {
+            tokens.add(Token(TokenType.op, '!='));
+            pos += 2;
+          } else if (c == '&' && pos + 1 < input.length && input[pos + 1] == '&') {
+            tokens.add(Token(TokenType.op, '&&'));
+            pos += 2;
+          } else if (c == '|' && pos + 1 < input.length && input[pos + 1] == '|') {
+            tokens.add(Token(TokenType.op, '||'));
+            pos += 2;
+          } else {
+            tokens.add(Token(TokenType.op, c));
+            pos += 1;
+          }
           break;
         case '/':
-          if (input[pos++] == '/') {
+          if (pos + 1 < input.length && input[pos + 1] == '/') {
+            pos += 2;
             while (pos < input.length && input[pos] != '\n') {
               pos += 1;
             }
           } else {
             tokens.add(Token(TokenType.op, c));
+            pos += 1;
           }
-
+          break;
         case '\n' || '\r' || '\t' || ' ':
           pos += 1;
           break;
@@ -57,8 +79,13 @@ class Lexer {
           pos += 1;
           break;
         case '=':
-          tokens.add(Token(TokenType.assign, c));
-          pos += 1;
+          if (pos + 1 < input.length && input[pos + 1] == '=') {
+            tokens.add(Token(TokenType.op, '=='));
+            pos += 2;
+          } else {
+            tokens.add(Token(TokenType.assign, c));
+            pos += 1;
+          }
           break;
         case '"':
           String str = '';
@@ -71,22 +98,9 @@ class Lexer {
           tokens.add(Token(TokenType.str, str));
           break;
         default:
-          bool isAlphaNumeric(final String c) =>
-              c.codeUnitAt(0) >= 'a'.codeUnitAt(0) &&
-                  c.codeUnitAt(0) <= 'z'.codeUnitAt(0) ||
-              c.codeUnitAt(0) >= 'A'.codeUnitAt(0) &&
-                  c.codeUnitAt(0) <= 'Z'.codeUnitAt(0) ||
-              c.codeUnitAt(0) >= '0'.codeUnitAt(0) &&
-                  c.codeUnitAt(0) <= '9'.codeUnitAt(0);
-
-          bool isLetter(final String c) {
-            final int code = c.codeUnitAt(0);
-            return (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
-          }
-
-          if (isLetter(c)) {
+          if (_isLetter(c)) {
             String id = '';
-            while (pos < input.length && isAlphaNumeric(input[pos])) {
+            while (pos < input.length && _isAlphaNumeric(input[pos])) {
               id += input[pos];
               pos += 1;
             }
@@ -103,4 +117,18 @@ class Lexer {
 
     return tokens;
   }
+
+  bool _isAlphaNumeric(final String c) =>
+      c.codeUnitAt(0) >= 'a'.codeUnitAt(0) &&
+          c.codeUnitAt(0) <= 'z'.codeUnitAt(0) ||
+      c.codeUnitAt(0) >= 'A'.codeUnitAt(0) &&
+          c.codeUnitAt(0) <= 'Z'.codeUnitAt(0) ||
+      c.codeUnitAt(0) >= '0'.codeUnitAt(0) &&
+          c.codeUnitAt(0) <= '9'.codeUnitAt(0);
+
+  bool _isLetter(final String c) {
+    final int code = c.codeUnitAt(0);
+    return (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
+  }
+
 }
