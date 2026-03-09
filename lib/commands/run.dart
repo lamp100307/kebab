@@ -20,7 +20,7 @@ final class CommandRun implements ICommand {
     if (runResult.exitCode == 0) {
       print(runResult.stdout);
     } else {
-      print('❌ Execution failed:\n${runResult.stderr}');
+      print('Execution failed:\n${runResult.stderr}');
     }
   }
 }

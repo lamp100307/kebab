@@ -80,6 +80,7 @@ final class CommandBuild implements ICommand {
     _analyseAndTrowsExceptions(nodes);
     final output = _getReadyCode(nodes);
 
+    intermediateFile.createSync(recursive: true);
     intermediateFile.writeAsStringSync(output);
 
     _compile();
