@@ -10,7 +10,6 @@ class CommandRunner extends runner.CommandRunner<void> {
       'debug',
       abbr: 'd',
       help: 'Enable debug mode',
-      defaultsTo: false,
     );
   }
 }

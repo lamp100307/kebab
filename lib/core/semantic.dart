@@ -22,7 +22,7 @@ class SemanticAnalyser {
     }
   }
 
-  void _analyseNode(ASTNode node) {
+  void _analyseNode(final ASTNode node) {
     switch (node) {
       case VarDeclNode(name: final name, type: final type, value: final value):
         _analyseVarDecl(name, type, value);
@@ -50,7 +50,11 @@ class SemanticAnalyser {
     }
   }
 
-  void _analyseVarDecl(String name, KebabType? type, ASTNode? value) {
+  void _analyseVarDecl(
+    final String name,
+    final KebabType? type,
+    final ASTNode? value,
+  ) {
     // checking for a repeat declaration
     if (variables.containsKey(name)) {
       errors.add('Variable "$name" already declared');
@@ -79,7 +83,7 @@ class SemanticAnalyser {
     }
   }
 
-  void _analyseVarAssign(String name, ASTNode value) {
+  void _analyseVarAssign(final String name, final ASTNode value) {
     if (!variables.containsKey(name)) {
       errors.add('Variable "$name" not declared');
       return;
@@ -93,7 +97,11 @@ class SemanticAnalyser {
     }
   }
 
-  KebabType _analyseOp(ASTNode left, String op, ASTNode right) {
+  KebabType _analyseOp(
+    final ASTNode left,
+    final String op,
+    final ASTNode right,
+  ) {
     final leftType = _astNodeToType(left);
     final rightType = _astNodeToType(right);
 
@@ -110,13 +118,13 @@ class SemanticAnalyser {
     return _typeFromTwo(leftType, rightType);
   }
 
-  KebabType _analyseFuncCall(String name, List<ASTNode> args) {
+  KebabType _analyseFuncCall(final String name, final List<ASTNode> args) {
     // TODO: implement function call analysis
     // For now, assume it returns i32
     return I32();
   }
 
-  KebabType _astNodeToType(ASTNode node) {
+  KebabType _astNodeToType(final ASTNode node) {
     switch (node) {
       case IntNode():
         return I32(); // default int literal is i32
@@ -151,7 +159,7 @@ class SemanticAnalyser {
     }
   }
 
-  bool _areTypesCompatible(KebabType target, KebabType source) {
+  bool _areTypesCompatible(final KebabType target, final KebabType source) {
     // Ssame type
     if (target.runtimeType == source.runtimeType) return true;
 
@@ -167,7 +175,7 @@ class SemanticAnalyser {
     return false;
   }
 
-  KebabType _typeFromTwo(KebabType type1, KebabType type2) {
+  KebabType _typeFromTwo(final KebabType type1, final KebabType type2) {
     // if either type is Float, result is Float
     if (type1 is FloatType || type2 is FloatType) {
       if (type1 is F64 || type2 is F64) return F64();
@@ -184,7 +192,7 @@ class SemanticAnalyser {
     return type1;
   }
 
-  KebabType _biggerNumType(NumType type1, NumType type2) {
+  KebabType _biggerNumType(final NumType type1, final NumType type2) {
     // Type promotion priority (higher number = higher priority)
     const priority = {
       I8: 1,

@@ -68,7 +68,7 @@ class Lexer {
           tokens.add(Token(TokenType.str, str));
           break;
         default:
-          bool isAlphaNumeric(String c) =>
+          bool isAlphaNumeric(final String c) =>
               c.codeUnitAt(0) >= 'a'.codeUnitAt(0) &&
                   c.codeUnitAt(0) <= 'z'.codeUnitAt(0) ||
               c.codeUnitAt(0) >= 'A'.codeUnitAt(0) &&
@@ -76,7 +76,7 @@ class Lexer {
               c.codeUnitAt(0) >= '0'.codeUnitAt(0) &&
                   c.codeUnitAt(0) <= '9'.codeUnitAt(0);
 
-          bool isLetter(String c) {
+          bool isLetter(final String c) {
             final int code = c.codeUnitAt(0);
             return (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
           }

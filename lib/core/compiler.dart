@@ -16,7 +16,7 @@ class Compiler {
     return code;
   }
 
-  void _compileNode(ASTNode node) {
+  void _compileNode(final ASTNode node) {
     switch (node) {
       case OpNode(left: final left, op: final op, right: final right):
         code += "$left $op $right";
@@ -66,7 +66,7 @@ class Compiler {
     }
   }
 
-  void _compilePrint(List<ASTNode> args) {
+  void _compilePrint(final List<ASTNode> args) {
     String fmt = "\"";
     for (var arg in args) {
       switch (arg) {
@@ -123,7 +123,7 @@ class Compiler {
     }
   }
 
-  String _typeFromNode(ASTNode node) {
+  String _typeFromNode(final ASTNode node) {
     switch (node) {
       case IntNode():
         return "int32_t";
@@ -142,7 +142,7 @@ class Compiler {
     }
   }
 
-  String _getFmt(String type) {
+  String _getFmt(final String type) {
     switch (type) {
       case "int8_t":
       case "int16_t":

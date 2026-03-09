@@ -12,7 +12,7 @@ class Parser {
 
   Token? _peek() => pos < tokens.length ? tokens[pos] : null;
 
-  Token _consume(TokenType type) {
+  Token _consume(final TokenType type) {
     final token = _peek();
     if (token != null && token.type == type) {
       pos++;
@@ -21,7 +21,7 @@ class Parser {
     throw Exception("Expected $type but got ${token?.type} at $pos");
   }
 
-  Token _onsumeWithValue(TokenType type, String value) {
+  Token _consumeWithValue(final TokenType type, final String value) {
     final token = _peek();
     if (token != null && token.type == type && token.value == value) {
       pos++;
@@ -32,12 +32,12 @@ class Parser {
     );
   }
 
-  bool _expect(TokenType type) {
+  bool _expect(final TokenType type) {
     final token = _peek();
     return token != null && token.type == type;
   }
 
-  bool _expectWithValue(TokenType type, String value) {
+  bool _expectWithValue(final TokenType type, final String value) {
     final token = _peek();
     return token != null && token.type == type && token.value == value;
   }
@@ -49,7 +49,7 @@ class Parser {
     return nodes;
   }
 
-  ASTNode _parseExpr(int minPrec) {
+  ASTNode _parseExpr(final int minPrec) {
     var left = _parseAtom();
     while (pos < tokens.length) {
       final Token op = _peek()!;
@@ -99,7 +99,7 @@ class Parser {
       case TokenType.lParen:
         pos++;
         final expr = _parseExpr(0);
-        _onsumeWithValue(TokenType.rParen, ')');
+        _consumeWithValue(TokenType.rParen, ')');
         return expr;
       case TokenType.key:
         switch (token.value) {
@@ -125,7 +125,7 @@ class Parser {
     }
   }
 
-  KebabType _parseKebabType(String rawType) {
+  KebabType _parseKebabType(final String rawType) {
     switch (rawType) {
       case "i8":
         return I8();

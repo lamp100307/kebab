@@ -12,7 +12,7 @@ final class CommandBuild implements ICommand {
   CommandBuild(this.config)
     : intermediateFile = File('${config.outputFile.path}.c');
 
-  void _debugPrint(Object item) {
+  void _debugPrint(final Object item) {
     if (config.debug) {
       if (item is Iterable) {
         for (var it in item) {
@@ -24,21 +24,21 @@ final class CommandBuild implements ICommand {
     }
   }
 
-  List<Token> _getTokens(String code) {
+  List<Token> _getTokens(final String code) {
     final lexer = Lexer(code);
     final tokens = lexer.tokenize();
     _debugPrint(tokens);
     return tokens;
   }
 
-  List<ASTNode> _getNodes(List<Token> tokens) {
+  List<ASTNode> _getNodes(final List<Token> tokens) {
     final Parser parser = Parser(tokens);
     final List<ASTNode> nodes = parser.parse();
     _debugPrint(nodes);
     return nodes;
   }
 
-  String _getReadyCode(List<ASTNode> nodes) {
+  String _getReadyCode(final List<ASTNode> nodes) {
     final Compiler compiler = Compiler(nodes);
     compiler.addDependencies();
     final output = compiler.compile();

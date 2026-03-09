@@ -20,7 +20,7 @@ enum CommandType {
   run,
   build;
 
-  static CommandType fromString(String value) {
+  static CommandType fromString(final String value) {
     switch (value) {
       case 'run':
         return CommandType.run;
@@ -31,7 +31,7 @@ enum CommandType {
     }
   }
 
-  void execute(Config config) {
+  void execute(final Config config) {
     switch (this) {
       case CommandType.run:
         return CommandRun(config).execute();
@@ -103,7 +103,6 @@ class BuildCommand extends Command {
         'release',
         abbr: 'r',
         help: 'Build in release mode',
-        defaultsTo: false,
       );
   }
 
