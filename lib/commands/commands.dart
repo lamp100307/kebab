@@ -3,8 +3,8 @@ export 'runner.dart';
 import 'dart:io' show File;
 
 import 'package:args/command_runner.dart' as runner;
-import 'package:kebab/config.dart';
 
+import 'package:kebab/config.dart';
 import 'build.dart';
 import 'run.dart';
 

@@ -1,5 +1,4 @@
 import 'package:kebab/exceptions/exceptions.dart';
-
 import 'ast_node.dart';
 import 'token.dart';
 
@@ -8,7 +7,21 @@ class Parser {
   List<Token> tokens;
   int pos = 0;
 
-  static const Map<String, int> opPrecedence = {"+": 1, "-": 1, "*": 2, "/": 2, "<": 3, ">": 3, "==": 3, "!=": 3, "<=": 3, ">=": 3, "&&": 4, "||": 4, "%": 4};
+  static const Map<String, int> opPrecedence = {
+    "+": 1,
+    "-": 1,
+    "*": 2,
+    "/": 2,
+    "<": 3,
+    ">": 3,
+    "==": 3,
+    "!=": 3,
+    "<=": 3,
+    ">=": 3,
+    "&&": 4,
+    "||": 4,
+    "%": 4,
+  };
 
   Parser(this.tokens);
 
@@ -104,7 +117,8 @@ class Parser {
       case TokenType.lBrace:
         pos++;
         final List<ASTNode> stmts = [];
-        while (pos < tokens.length && !_expectWithValue(TokenType.rBrace, '}')) {
+        while (pos < tokens.length &&
+            !_expectWithValue(TokenType.rBrace, '}')) {
           stmts.add(_parseExpr(0));
         }
         pos++;
@@ -131,28 +145,28 @@ class Parser {
             final thenBlock = _parseExpr(0);
             final List<ElifNode> elifs = [];
             ASTNode? elseBlock;
-            
+
             while (pos < tokens.length && _expect(TokenType.key)) {
               final keyword = tokens[pos].value;
-              
+
               if (keyword == 'else') {
                 pos++;
-                if (pos < tokens.length && 
-                    tokens[pos].type == TokenType.key && 
+                if (pos < tokens.length &&
+                    tokens[pos].type == TokenType.key &&
                     tokens[pos].value == 'if') {
-                  pos++; 
+                  pos++;
                   final elifCondition = _parseExpr(0);
                   final elifBlock = _parseExpr(0);
                   elifs.add(ElifNode(elifCondition, elifBlock));
                 } else {
                   elseBlock = _parseExpr(0);
-                  break; 
+                  break;
                 }
               } else {
-                break; 
+                break;
               }
             }
-            
+
             return IfNode(condition, thenBlock, elifs, elseBlock);
           case 'for':
             pos++;
@@ -169,6 +183,11 @@ class Parser {
             }
             final block = _parseExpr(0);
             return ForNode(init, condition, update, block);
+          case "while":
+            pos++;
+            final condition = _parseExpr(0);
+            final block = _parseExpr(0);
+            return WhileNode(condition, block);
           case 'break':
             pos++;
             return BreakNode();

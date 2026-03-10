@@ -61,20 +61,25 @@ class Compiler {
         _compileNode(value);
         code += noSemicolon ? "\n" : ";\n";
         break;
-      case IfNode(condition: final condition, thenBlock: final thenBlock, elifs: final elifs, elseBlock: final elseBlock):
+      case IfNode(
+        condition: final condition,
+        thenBlock: final thenBlock,
+        elifs: final elifs,
+        elseBlock: final elseBlock,
+      ):
         code += "if (";
         _compileNode(condition);
         code += ")";
-        
+
         _compileNode(thenBlock);
-        
+
         for (var elif in elifs) {
           code += " else if (";
           _compileNode(elif.condition);
           code += ")";
           _compileNode(elif.block);
         }
-        
+
         if (elseBlock != null) {
           code += " else ";
           _compileNode(elseBlock);
@@ -95,7 +100,12 @@ class Compiler {
         }
         code += "}\n";
         break;
-      case ForNode(init: final init, condition: final condition, update: final update, block: final block):
+      case ForNode(
+        init: final init,
+        condition: final condition,
+        update: final update,
+        block: final block,
+      ):
         code += "for (";
         if (init != null) {
           _compileNode(init, true);
@@ -111,11 +121,23 @@ class Compiler {
         break;
       case BreakNode():
         code += "break";
-        code += noSemicolon? "" : ";";
+        code += noSemicolon ? "" : ";";
         break;
       case ContinueNode():
         code += "continue";
-        code += noSemicolon? "" : ";";
+        code += noSemicolon ? "" : ";";
+        break;
+      case WhileNode(condition: final condition, block: final block):
+        code += "while (";
+        _compileNode(condition, true);
+        code += ")";
+        if (block is BlockNode) {
+          _compileNode(block);
+        } else {
+          code += "{\n";
+          _compileNode(block);
+          code += "}\n";
+        }
         break;
       default:
         break;
@@ -128,18 +150,19 @@ class Compiler {
       switch (arg) {
         case IntNode(value: final v):
           if (v >= 0 && v <= 65_535) {
-            fmt += "%hu";           // uint16_t / unsigned short
+            fmt += "%hu"; // uint16_t / unsigned short
           } else if (v >= -32_768 && v <= 32_767) {
-            fmt += "%hd";           // int16_t / short (исправлено: %h → %hd)
+            fmt += "%hd"; // int16_t / short (исправлено: %h → %hd)
           } else if (v >= 0 && v <= 4_294_967_295) {
-            fmt += "%u";            // uint32_t / unsigned int
+            fmt += "%u"; // uint32_t / unsigned int
           } else if (v >= -2_147_483_648 && v <= 2_147_483_647) {
-            fmt += "%d";            // int32_t / int
-          } else if (BigInt.from(v) >= BigInt.zero && BigInt.from(v) <= BigInt.parse('0xFFFFFFFFFFFFFFFF')) {
-            fmt += "%llu";          // uint64_t / unsigned long long
-          } else if (v >= -9_223_372_036_854_775_808 && 
-                    v <= 9_223_372_036_854_775_807) {
-            fmt += "%lld";          // int64_t / long long
+            fmt += "%d"; // int32_t / int
+          } else if (BigInt.from(v) >= BigInt.zero &&
+              BigInt.from(v) <= BigInt.parse('0xFFFFFFFFFFFFFFFF')) {
+            fmt += "%llu"; // uint64_t / unsigned long long
+          } else if (v >= -9_223_372_036_854_775_808 &&
+              v <= 9_223_372_036_854_775_807) {
+            fmt += "%lld"; // int64_t / long long
           }
           break;
         case StrNode():
@@ -186,7 +209,7 @@ class Compiler {
           default:
             break;
         }
-      case VarDeclNode(type : final type):
+      case VarDeclNode(type: final type):
         switch (type) {
           case NumType():
             code += "#include <stdint.h>\n";
@@ -198,7 +221,12 @@ class Compiler {
             break;
         }
 
-      case IfNode(condition: final condition, thenBlock: final thenBlock, elifs: final elifs, elseBlock: final elseBlock):
+      case IfNode(
+        condition: final condition,
+        thenBlock: final thenBlock,
+        elifs: final elifs,
+        elseBlock: final elseBlock,
+      ):
         _analyseDependency(condition);
         _analyseDependency(thenBlock);
         for (final elif in elifs) {
@@ -208,7 +236,12 @@ class Compiler {
           _analyseDependency(elseBlock);
         }
         break;
-      case ForNode(init: final init, condition: final condition, update: final update, block: final block):
+      case ForNode(
+        init: final init,
+        condition: final condition,
+        update: final update,
+        block: final block,
+      ):
         if (init != null) {
           _analyseDependency(init);
         }

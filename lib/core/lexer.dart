@@ -4,7 +4,15 @@ import 'package:kebab/exceptions/exceptions.dart'
 import 'token.dart';
 
 class Lexer {
-  static const keywords = ['let', 'if', 'else', 'for', 'break', 'continue'];
+  static const keywords = [
+    'let',
+    'if',
+    'else',
+    'for',
+    'break',
+    'continue',
+    'while',
+  ];
 
   final String input;
 
@@ -28,19 +36,29 @@ class Lexer {
           if (c == '<' && pos + 1 < input.length && input[pos + 1] == '=') {
             tokens.add(Token(TokenType.op, '<='));
             pos += 2;
-          } else if (c == '>' && pos + 1 < input.length && input[pos + 1] == '=') {
+          } else if (c == '>' &&
+              pos + 1 < input.length &&
+              input[pos + 1] == '=') {
             tokens.add(Token(TokenType.op, '>='));
             pos += 2;
-          } else if (c == '=' && pos + 1 < input.length && input[pos + 1] == '=') {
+          } else if (c == '=' &&
+              pos + 1 < input.length &&
+              input[pos + 1] == '=') {
             tokens.add(Token(TokenType.op, '=='));
             pos += 2;
-          } else if (c == '!' && pos + 1 < input.length && input[pos + 1] == '=') {
+          } else if (c == '!' &&
+              pos + 1 < input.length &&
+              input[pos + 1] == '=') {
             tokens.add(Token(TokenType.op, '!='));
             pos += 2;
-          } else if (c == '&' && pos + 1 < input.length && input[pos + 1] == '&') {
+          } else if (c == '&' &&
+              pos + 1 < input.length &&
+              input[pos + 1] == '&') {
             tokens.add(Token(TokenType.op, '&&'));
             pos += 2;
-          } else if (c == '|' && pos + 1 < input.length && input[pos + 1] == '|') {
+          } else if (c == '|' &&
+              pos + 1 < input.length &&
+              input[pos + 1] == '|') {
             tokens.add(Token(TokenType.op, '||'));
             pos += 2;
           } else {
@@ -142,5 +160,4 @@ class Lexer {
     final int code = c.codeUnitAt(0);
     return (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
   }
-
 }

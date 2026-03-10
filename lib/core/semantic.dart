@@ -1,5 +1,4 @@
 import 'package:kebab/exceptions/exceptions.dart';
-
 import 'ast_node.dart';
 
 class SemanticAnalyser {
@@ -33,7 +32,11 @@ class SemanticAnalyser {
         _analyseFuncCall(name, args);
         break;
 
-      case IfNode(condition: final cond, thenBlock: final then, elseBlock: final elseBlock):
+      case IfNode(
+        condition: final cond,
+        thenBlock: final then,
+        elseBlock: final elseBlock,
+      ):
         _analyseIfNode(cond, then, elseBlock);
         break;
 
@@ -43,7 +46,12 @@ class SemanticAnalyser {
         }
         break;
 
-      case ForNode(init: final init, condition: final condition, update: final update, block: final block): 
+      case ForNode(
+        init: final init,
+        condition: final condition,
+        update: final update,
+        block: final block,
+      ):
         if (init != null) {
           _analyseNode(init);
         }
@@ -52,6 +60,11 @@ class SemanticAnalyser {
           _analyseNode(update);
         }
         _analyseNode(block);
+        break;
+      case WhileNode(condition: final condition, block: final block):
+        _analyseNode(condition);
+        _analyseNode(block);
+        break;
       case IntNode():
       case StrNode():
       case VarRefNode():
@@ -68,7 +81,7 @@ class SemanticAnalyser {
   void _analyseIfNode(
     final ASTNode cond,
     final ASTNode then,
-    final ASTNode? else_
+    final ASTNode? else_,
   ) {
     _analyseNode(cond);
     _analyseNode(then);
@@ -133,7 +146,6 @@ class SemanticAnalyser {
     final String op,
     final ASTNode right,
   ) {
-    
     final leftType = _astNodeToType(left);
     final rightType = _astNodeToType(right);
 

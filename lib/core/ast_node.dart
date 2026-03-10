@@ -154,9 +154,9 @@ final class BlockNode extends ASTNode {
 final class IfNode extends ASTNode {
   final ASTNode condition;
   final ASTNode thenBlock;
-  final List<ElifNode> elifs;  // ← добавить elif'ы
+  final List<ElifNode> elifs; // ← добавить elif'ы
   final ASTNode? elseBlock;
-  
+
   IfNode(this.condition, this.thenBlock, this.elifs, this.elseBlock);
 
   @override
@@ -166,7 +166,7 @@ final class IfNode extends ASTNode {
 final class ElifNode extends ASTNode {
   final ASTNode condition;
   final ASTNode block;
-  
+
   ElifNode(this.condition, this.block);
 
   @override
@@ -178,7 +178,7 @@ final class ForNode extends ASTNode {
   final ASTNode condition;
   final ASTNode? update;
   final ASTNode block;
-  
+
   ForNode(this.init, this.condition, this.update, this.block);
 
   @override
@@ -186,4 +186,15 @@ final class ForNode extends ASTNode {
 }
 
 final class BreakNode extends ASTNode {}
+
 final class ContinueNode extends ASTNode {}
+
+final class WhileNode extends ASTNode {
+  final ASTNode condition;
+  final ASTNode block;
+
+  WhileNode(this.condition, this.block);
+
+  @override
+  String toString() => "while $condition $block";
+}
