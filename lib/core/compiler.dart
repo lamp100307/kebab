@@ -147,17 +147,26 @@ class Compiler {
   }
 
   void addDependencies() {
-    for (var n in nodes) {
-      if (n is FuncCallNode) {
-        switch (n.name) {
+    for (final n in nodes) {
+      _analyseDependency(n);
+    }
+  }
+
+  void _analyseDependency(final ASTNode node) {
+    switch (node) {
+      case FuncCallNode(name: final name, args: final args):
+        for (final arg in args) {
+          _analyseDependency(arg);
+        }
+        switch (name) {
           case "print":
             code += "#include <stdio.h>\n";
             break;
           default:
             break;
         }
-      } else if (n is VarDeclNode) {
-        switch (n.type) {
+      case VarDeclNode(type : final type):
+        switch (type) {
           case NumType():
             code += "#include <stdint.h>\n";
             break;
@@ -167,7 +176,29 @@ class Compiler {
           default:
             break;
         }
-      }
+
+      case IfNode(condition: final condition, thenBlock: final thenBlock, elifs: final elifs, elseBlock: final elseBlock):
+        _analyseDependency(condition);
+        _analyseDependency(thenBlock);
+        for (final elif in elifs) {
+          _analyseDependency(elif);
+        }
+        if (elseBlock != null) {
+          _analyseDependency(elseBlock);
+        }
+        break;
+      case ForNode(init: final init, condition: final condition, update: final update, block: final block):
+        if (init != null) {
+          _analyseDependency(init);
+        }
+        _analyseDependency(condition);
+        if (update != null) {
+          _analyseDependency(update);
+        }
+        _analyseDependency(block);
+        break;
+      default:
+        break;
     }
   }
 
