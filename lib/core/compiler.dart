@@ -139,6 +139,16 @@ class Compiler {
           code += "}\n";
         }
         break;
+      case LoopNode(block: final block):
+        code += "while (1)";
+        if (block is BlockNode) {
+          _compileNode(block);
+        } else {
+          code += "{\n";
+          _compileNode(block);
+          code += "}\n";
+        }
+        break;
       default:
         break;
     }

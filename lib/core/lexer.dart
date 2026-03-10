@@ -12,6 +12,7 @@ class Lexer {
     'break',
     'continue',
     'while',
+    'loop',
   ];
 
   final String input;

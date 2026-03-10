@@ -188,6 +188,10 @@ class Parser {
             final condition = _parseExpr(0);
             final block = _parseExpr(0);
             return WhileNode(condition, block);
+          case "loop":
+            pos++;
+            final block = _parseExpr(0);
+            return LoopNode(block);
           case 'break':
             pos++;
             return BreakNode();

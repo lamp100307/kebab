@@ -65,6 +65,9 @@ class SemanticAnalyser {
         _analyseNode(condition);
         _analyseNode(block);
         break;
+      case LoopNode(block: final block):
+        _analyseNode(block);
+        break;
       case IntNode():
       case StrNode():
       case VarRefNode():

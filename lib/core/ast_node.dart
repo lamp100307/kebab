@@ -198,3 +198,12 @@ final class WhileNode extends ASTNode {
   @override
   String toString() => "while $condition $block";
 }
+
+final class LoopNode extends ASTNode {
+  final ASTNode block;
+
+  LoopNode(this.block);
+
+  @override
+  String toString() => "loop $block";
+}
