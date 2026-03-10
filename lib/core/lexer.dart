@@ -4,7 +4,7 @@ import 'package:kebab/exceptions/exceptions.dart'
 import 'token.dart';
 
 class Lexer {
-  static const keywords = ['let', 'if', 'else', 'for'];
+  static const keywords = ['let', 'if', 'else', 'for', 'break', 'continue'];
 
   final String input;
 
@@ -24,7 +24,7 @@ class Lexer {
           }
           tokens.add(Token(TokenType.num, num));
           break;
-        case '+' || '-' || '*' || '<' || '>' || '!' || '&' || '|':
+        case '+' || '-' || '*' || '<' || '>' || '!' || '&' || '|' || '%':
           if (c == '<' && pos + 1 < input.length && input[pos + 1] == '=') {
             tokens.add(Token(TokenType.op, '<='));
             pos += 2;

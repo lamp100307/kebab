@@ -8,7 +8,7 @@ class Parser {
   List<Token> tokens;
   int pos = 0;
 
-  static const Map<String, int> opPrecedence = {"+": 1, "-": 1, "*": 2, "/": 2, "<": 3, ">": 3, "==": 3, "!=": 3, "<=": 3, ">=": 3, "&&": 4, "||": 4};
+  static const Map<String, int> opPrecedence = {"+": 1, "-": 1, "*": 2, "/": 2, "<": 3, ">": 3, "==": 3, "!=": 3, "<=": 3, ">=": 3, "&&": 4, "||": 4, "%": 4};
 
   Parser(this.tokens);
 
@@ -169,6 +169,12 @@ class Parser {
             }
             final block = _parseExpr(0);
             return ForNode(init, condition, update, block);
+          case 'break':
+            pos++;
+            return BreakNode();
+          case 'continue':
+            pos++;
+            return ContinueNode();
           default:
             throw ParserUnknownKeywordException(token.value);
         }

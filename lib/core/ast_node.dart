@@ -184,3 +184,6 @@ final class ForNode extends ASTNode {
   @override
   String toString() => "for $init ; $condition ; $update $block";
 }
+
+final class BreakNode extends ASTNode {}
+final class ContinueNode extends ASTNode {}

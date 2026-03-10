@@ -109,6 +109,14 @@ class Compiler {
         code += ")";
         _compileNode(block);
         break;
+      case BreakNode():
+        code += "break";
+        code += noSemicolon? "" : ";";
+        break;
+      case ContinueNode():
+        code += "continue";
+        code += noSemicolon? "" : ";";
+        break;
       default:
         break;
     }
