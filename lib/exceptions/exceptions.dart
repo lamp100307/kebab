@@ -4,6 +4,7 @@ import 'package:kebab/exceptions/code_location.dart';
 part 'lexer_exceptions.dart';
 part 'semantic_exceptions.dart';
 part 'parser_exceptions.dart';
+part 'file_exceptions.dart';
 
 class KebabException implements Exception {
   final CodeLocation? location;

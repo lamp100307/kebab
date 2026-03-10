@@ -8,7 +8,7 @@ void main(final List<String> args) async {
   try {
     await runner.run(args);
   } on KebabException catch (e) {
-    print(e);
+    print(e.message);
     exit(1);
   }
 }

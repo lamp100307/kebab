@@ -2,7 +2,6 @@ import 'dart:io' show Process;
 
 import 'package:kebab/commands/build.dart';
 import 'package:kebab/config.dart';
-
 import 'commands.dart';
 
 final class CommandRun implements ICommand {
