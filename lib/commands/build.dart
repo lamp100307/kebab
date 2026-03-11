@@ -73,8 +73,9 @@ final class CommandBuild implements ICommand {
 
   @override
   void execute() {
-    final code = config.inputFile.readAsStringSync();
+    var code = config.inputFile.readAsStringSync();
 
+    code = Preprocessor(code).preprocess();
     final tokens = _getTokens(code);
     final nodes = _getNodes(tokens);
     _analyseAndTrowsExceptions(nodes);
