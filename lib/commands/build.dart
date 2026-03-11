@@ -11,7 +11,7 @@ final class CommandBuild implements ICommand {
   final File intermediateFile;
 
   CommandBuild(this.config)
-    : intermediateFile = File('${config.outputFile.path}.c');
+    : intermediateFile = File('${config.outputFile.path}.cpp');
 
   void _debugPrint(final Object item) {
     if (config.debug) {
@@ -48,7 +48,7 @@ final class CommandBuild implements ICommand {
   }
 
   void _compile() {
-    final compileResult = Process.runSync('tcc', [
+    final compileResult = Process.runSync('g++', [
       intermediateFile.path,
       '-o',
       config.outputFile.path,
