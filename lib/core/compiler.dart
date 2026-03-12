@@ -30,7 +30,10 @@ class Compiler {
       case FuncCallNode(name: final name, args: final args):
         switch (name) {
           case "print":
-            _compilePrint(args);
+            code += "std::cout << ";
+            _compileNode(args[0], true);
+            code += ";\n";
+            break;
         }
         break;
       case VarRefNode(name: final name):
@@ -154,52 +157,6 @@ class Compiler {
     }
   }
 
-  void _compilePrint(final List<ASTNode> args) {
-    String fmt = "\"";
-    for (var arg in args) {
-      switch (arg) {
-        case IntNode(value: final v):
-          if (v >= 0 && v <= 65_535) {
-            fmt += "%hu"; // uint16_t / unsigned short
-          } else if (v >= -32_768 && v <= 32_767) {
-            fmt += "%hd"; // int16_t / short (исправлено: %h → %hd)
-          } else if (v >= 0 && v <= 4_294_967_295) {
-            fmt += "%u"; // uint32_t / unsigned int
-          } else if (v >= -2_147_483_648 && v <= 2_147_483_647) {
-            fmt += "%d"; // int32_t / int
-          } else if (BigInt.from(v) >= BigInt.zero &&
-              BigInt.from(v) <= BigInt.parse('0xFFFFFFFFFFFFFFFF')) {
-            fmt += "%llu"; // uint64_t / unsigned long long
-          } else if (v >= -9_223_372_036_854_775_808 &&
-              v <= 9_223_372_036_854_775_807) {
-            fmt += "%lld"; // int64_t / long long
-          }
-          break;
-        case StrNode():
-          fmt += "%s";
-          break;
-        case OpNode():
-          fmt += "%d";
-          break;
-        case VarRefNode(name: final name):
-          final type = vars.containsKey(name)
-              ? vars[name]!
-              : throw Exception("Variable not declared $name");
-          fmt += _getFmt(type);
-          break;
-        default:
-          break;
-      }
-    }
-    fmt += "\"";
-    code += "printf($fmt, ";
-    for (int i = 0; i < args.length; i++) {
-      _compileNode(args[i]);
-      if (!(i == args.length - 1)) code += ", ";
-    }
-    code += ");\n";
-  }
-
   void addDependencies() {
     for (final n in nodes) {
       _analyseDependency(n);
@@ -214,7 +171,7 @@ class Compiler {
         }
         switch (name) {
           case "print":
-            code += "#include <stdio.h>\n";
+            code += "#include <iostream>\n";
             break;
           default:
             break;
@@ -282,34 +239,6 @@ class Compiler {
         }
       default:
         throw Exception("Unknown type");
-    }
-  }
-
-  String _getFmt(final String type) {
-    switch (type) {
-      case "int8_t":
-      case "int16_t":
-      case "int32_t":
-      case "uint8_t":
-      case "uint16_t":
-      case "uint32_t":
-      case "bool":
-        return "%d";
-      case "int64_t":
-        return "%lld";
-      case "uint64_t":
-        return "%llu";
-      case "char":
-        return "%c";
-      case "float":
-        return "%f";
-      case "double":
-        return "%lf";
-      case "string":
-        return "%s";
-
-      default:
-        throw Exception("Unknown type $type");
     }
   }
 }
