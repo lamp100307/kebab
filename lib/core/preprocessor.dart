@@ -7,53 +7,69 @@ class Preprocessor {
   Preprocessor(this.input);
 
   String preprocess() {
+    input = _processDirectives();
+    return _expandMacros(input);
+  }
+
+  String _processDirectives() {
+    String result = '';
+    pos = 0;
+    
     while (pos < input.length) {
-      final String c = input[pos];
-      if (c == '#') {
+      if (input[pos] == '#') {
         _processLine();
-      } else if (_isLetter(c)) {
-        String name = '';
-        while (pos < input.length && _isLetter(input[pos])) {
-          name += input[pos];
-          pos++;
-        }
-        pos++;
-        if (defs.containsKey(name)) {
-          final String value = defs[name]!;
-          input = input.replaceRange(pos - name.length - 1, pos-1, value);
-          pos += value.length;
-        }
-      }
-      
-      else {
+      } else {
+        result += input[pos];
         pos++;
       }
     }
-    return input;
+    return result;
+  }
+
+  String _expandMacros(final String text) {
+    String result = '';
+    int i = 0;
+    
+    while (i < text.length) {
+      if (_isLetter(text[i])) {
+        String name = '';
+        while (i < text.length && _isLetter(text[i])) {
+          name += text[i];
+          i++;
+        }
+        if (defs.containsKey(name)) {
+          result += defs[name]!;
+        } else {
+          result += name;
+        }
+      } else {
+        result += text[i];
+        i++;
+      }
+    }
+    return result;
   }
 
   String _getString(final String endChar) {
-    String line = '';
+    String result = '';
     while (pos < input.length && input[pos] != endChar) {
-      line += input[pos];
+      result += input[pos];
       pos++;
     }
-    pos++;
-    return line;
+    if (pos < input.length && input[pos] == endChar) {
+      pos++;
+    }
+    return result.trim();
   }
 
   void _processLine() {
     pos++;
-    final start = pos - 1;
-    final String line = _getString(' ');
-    switch (line) {
-      case 'def':
-        final String name = _getString(' ');
-        final String value = _getString('\n');
-        input = input.replaceRange(start, pos, '');
-        pos = start + value.length;
-        defs[name] = value;
-        break;
+    final String cmd = _getString(' ');
+    
+    if (cmd == 'def') {
+      final String name = _getString(' ');
+      final String value = _getString('\n');
+      defs[name] = value;
     }
   }
 
