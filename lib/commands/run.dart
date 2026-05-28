@@ -1,19 +1,23 @@
 import 'dart:io' show Process;
 
 import 'package:kebab/commands/build.dart';
-import 'package:kebab/config.dart';
 import 'commands.dart';
 
-final class CommandRun implements ICommand {
+final class CommandRun extends KebabCommand {
   @override
-  final Config config;
+  final String name = 'run';
+  @override
+  final String description = 'Run the application';
 
-  const CommandRun(this.config);
+  CommandRun() : super(CommandType.run) {
+    argParser
+      ..addOption('input', abbr: 'i', help: 'Input file path')
+      ..addOption('output', abbr: 'o', help: 'Output file path');
+  }
 
   @override
-  void execute() {
-    CommandBuild(config).execute();
-
+  void run() {
+    CommandBuild().build(config);
     final runResult = Process.runSync(config.outputFile.path, []);
 
     if (runResult.exitCode == 0) {

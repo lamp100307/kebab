@@ -5,20 +5,25 @@ import 'package:path/path.dart' as p;
 
 import 'package:kebab/config.dart';
 import 'package:kebab/project.dart';
-import 'command_type.dart';
 
 export 'runner.dart';
-export 'command_type.dart';
 
-abstract interface class ICommand {
-  final Config config;
-
-  const ICommand(this.config);
-
-  void execute();
-}
+enum CommandType { run, build }
 
 abstract class KebabCommand extends Command<void> {
+  final CommandType command;
+  static Config? _configCache;
+
+  KebabCommand(this.command);
+
+  Config get config => _configCache ??= Config(
+    command,
+    inputFile,
+    outputFile,
+    project: KebabProject.fromToml(),
+    debug: debug,
+  );
+
   bool get debug => globalResults?['debug'] as bool? ?? false;
 
   File? get inputFile {
@@ -27,71 +32,38 @@ abstract class KebabCommand extends Command<void> {
         : argResults?['input']; // kebab run -i input.keb (named)
 
     if (path == null) return null;
+    // Checking the existence of file further in Config._resolveInputFile
     return File(path).absolute;
   }
 
+  /// Resolves the output file path
+  ///
+  /// Returns:
+  ///
+  /// The output file path is resolved from the input file path and the output path argument
   File? get outputFile {
-    String? path = (argResults?.rest.length ?? 0) > 1
-        ? argResults!.rest[1] // kebab run input.keb output.file (position)
-        : argResults?['output']; // kebab run -i input.keb -o output.file (named)
+    String stripExt(final String path) =>
+        p.join(p.dirname(path), p.basenameWithoutExtension(path));
 
-    // dir: output/ => file: output/input
-    final inputFileName = p.basenameWithoutExtension(inputFile?.path ?? '');
+    final input = inputFile;
 
-    if (path != null && path.endsWith('/')) {
-      // is directory
-      path += inputFileName;
-    } else {
-      path ??= inputFileName;
-    }
+    // Because if there is no input file, there will be no output file
+    if (input == null) return null;
 
-    return File(path).absolute;
-  }
+    final rawPath = (argResults?.rest.length ?? 0) > 1
+        ? argResults!.rest[1]
+        : argResults?['output'];
 
-  Config _initConfig(final CommandType command) => Config(
-    command,
-    inputFile,
-    outputFile,
-    project: KebabProject.fromToml(),
-    debug: debug,
-  );
-}
+    // If no output path is provided, use the input file's directory and basename
+    if (rawPath == null) return File(stripExt(input.path));
 
-class BuildCommand extends KebabCommand {
-  @override
-  final String name = 'build';
-  @override
-  final String description = 'Build the project';
+    final isDir =
+        rawPath.endsWith(p.separator) || rawPath == '.' || rawPath == '..';
 
-  BuildCommand() {
-    argParser
-      ..addOption('input', abbr: 'i', help: 'Input file path')
-      ..addOption('output', abbr: 'o', help: 'Output file path')
-      ..addFlag('release', abbr: 'r', help: 'Build in release mode');
-  }
+    // Else if the output path is a directory, use the input file's basename; otherwise, use the raw path
+    if (isDir) return File(stripExt(p.join(rawPath, input.path)));
 
-  @override
-  void run() {
-    final config = _initConfig(CommandType.build);
-    config.executeCommand();
-  }
-}
-
-class RunCommand extends KebabCommand {
-  @override
-  final String name = 'run';
-  @override
-  final String description = 'Run the application';
-
-  RunCommand() {
-    argParser
-      ..addOption('input', abbr: 'i', help: 'Input file path')
-      ..addOption('output', abbr: 'o', help: 'Output file path');
-  }
-
-  @override
-  void run() {
-    final config = _initConfig(CommandType.run);
-    config.executeCommand();
+    // Else the output path is not a directory, use the raw path as-is
+    return File(stripExt(p.join(rawPath)));
   }
 }

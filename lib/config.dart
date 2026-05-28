@@ -1,8 +1,9 @@
 import 'dart:io' show File;
-import 'package:kebab/exceptions/exceptions.dart';
+
 import 'package:path/path.dart' as p;
 
 import 'package:kebab/commands/commands.dart' show CommandType;
+import 'package:kebab/exceptions/exceptions.dart';
 import 'package:kebab/project.dart';
 
 final class Config {
@@ -17,7 +18,7 @@ final class Config {
     this.inputFile,
     this.outputFile, {
     this.project,
-    required this.debug,
+    this.debug = false,
   });
 
   factory Config(
@@ -55,7 +56,7 @@ final class Config {
   }) {
     if (providedFile != null) {
       if (providedFile.existsSync()) return providedFile;
-      throw FileInputNotProvidedExceprion();
+      throw FileInputNotExistsException(providedFile.path);
     }
 
     if (project != null) {
@@ -63,10 +64,10 @@ final class Config {
         '${project.rootDir.path}/${project.projectName}.keb',
       );
       if (defaultFile.existsSync()) return defaultFile;
-      throw FileInputNotProvidedExceprion();
+      throw FileInputNotExistsException(defaultFile.path);
     }
 
-    throw FileInputNotProvidedExceprion();
+    throw FileInputNotProvidedException();
   }
 
   static File _resolveOutputFile({
@@ -77,6 +78,4 @@ final class Config {
     if (providedFile != null) return providedFile;
     return File(p.withoutExtension(inputFile.path));
   }
-
-  void executeCommand() => command.execute(this);
 }

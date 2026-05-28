@@ -52,12 +52,18 @@ final class KebabProject {
       return null;
     }
 
-    final projectInToml = toml['project'] as Map<String, dynamic>?;
+    final tomlProject = toml['project'] as Map<String, dynamic>?;
 
     final rootDir = configFile.parent;
-    final projectName = projectInToml?['name'] ?? p.basename(rootDir.path);
-    final debug = projectInToml?['debug'] as bool? ?? false;
-    final kebabVersion = projectInToml?['kebab_version'] as VersionString?;
+
+    // Project name from toml or fallback to directory name
+    final projectName = tomlProject?['name'] ?? p.basename(rootDir.path);
+
+    // Debug mode from toml or default to false
+    final debug = tomlProject?['debug'] as bool? ?? false;
+
+    // Kebab version from toml or default to null
+    final kebabVersion = tomlProject?['kebab_version'] as VersionString?;
 
     if (kebabVersion == null && toml.isNotEmpty) {
       throw FormatException('kebab_version is required in oven.toml');
@@ -75,7 +81,8 @@ final class KebabProject {
   static File? _findConfigFile() {
     var dir = Directory.current;
 
-    while (true) {
+    // up to 5 levels deep
+    for (int i = 0; i < 5; i++) {
       final file = File(p.join(dir.path, 'oven.toml'));
       if (file.existsSync()) return file;
 

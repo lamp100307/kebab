@@ -7,9 +7,18 @@ sealed class FileException implements KebabException {
   const FileException([this.location]);
 }
 
-final class FileInputNotProvidedExceprion extends FileException {
+final class FileInputNotProvidedException extends FileException {
   @override
   String get message => "Input file does not provide";
 
-  const FileInputNotProvidedExceprion([super.location]);
+  const FileInputNotProvidedException([super.location]);
+}
+
+final class FileInputNotExistsException extends FileException {
+  final String path;
+
+  @override
+  String get message => "File ($path) does not exist";
+
+  const FileInputNotExistsException(this.path, [super.location]);
 }
