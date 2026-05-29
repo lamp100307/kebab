@@ -17,3 +17,11 @@ class KebabException implements Exception {
 
   const KebabException([this.location]);
 }
+
+mixin PathMixin {
+  String get path;
+}
+
+mixin OriginalExceptionMixin {
+  Object? get originalException;
+}

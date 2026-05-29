@@ -14,7 +14,8 @@ final class FileInputNotProvidedException extends FileException {
   const FileInputNotProvidedException([super.location]);
 }
 
-final class FileInputNotExistsException extends FileException {
+final class FileInputNotExistsException extends FileException with PathMixin {
+  @override
   final String path;
 
   @override

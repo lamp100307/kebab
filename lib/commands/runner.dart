@@ -7,6 +7,7 @@ class CommandRunner extends runner.CommandRunner<void> {
   CommandRunner() : super('kebab', 'Kebab CLI tool') {
     addCommand(CommandBuild());
     addCommand(CommandRun());
+
     argParser.addFlag('debug', abbr: 'd', help: 'Enable debug mode');
   }
 }

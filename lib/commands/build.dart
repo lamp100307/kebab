@@ -1,17 +1,20 @@
 import 'dart:io' show File, Process;
 
+import 'package:args/args.dart' show ArgResults;
+import 'package:kebab/build_config.dart';
 import 'package:kebab/config.dart';
 import 'package:kebab/core/core.dart';
 import 'package:kebab/exceptions/exceptions.dart';
 import 'commands.dart';
 
-final class CommandBuild extends KebabCommand {
+final class CommandBuild extends Command {
   @override
   final String name = 'build';
   @override
   final String description = 'Build the project';
 
-  late final File intermediateFile;
+  late final BuildConfig _buildConfig;
+  late final File _intermediateFile;
 
   CommandBuild() : super(CommandType.build) {
     argParser
@@ -56,9 +59,9 @@ final class CommandBuild extends KebabCommand {
 
   void _compile() {
     final compileResult = Process.runSync('tcc', [
-      intermediateFile.path,
+      _intermediateFile.path,
       '-o',
-      config.outputFile.path,
+      _buildConfig.output.path,
     ]);
 
     if (compileResult.exitCode != 0) {
@@ -66,7 +69,7 @@ final class CommandBuild extends KebabCommand {
     }
 
     if (!config.debug) {
-      intermediateFile.deleteSync();
+      _intermediateFile.deleteSync();
     }
   }
 
@@ -78,26 +81,31 @@ final class CommandBuild extends KebabCommand {
     }
   }
 
-  void build(final Config config) {
+  BuildConfig build(final ArgResults? argResults, final Config config) {
+    _buildConfig = BuildConfig.init(argResults, config);
+    _intermediateFile = File('${_buildConfig.output.path}.c');
+
     _debugPrint(
-      'Building ${config.inputFile.path} to ${config.outputFile.path}',
+      'Building ${_buildConfig.target.path} to ${_buildConfig.output.path}',
     );
 
-    final code = config.inputFile.readAsStringSync();
-    intermediateFile = File('${config.outputFile.path}.c');
+    final code = _buildConfig.target.readAsStringSync();
+    _intermediateFile.createSync(recursive: true);
+    _intermediateFile.writeAsStringSync(code);
 
     final tokens = _getTokens(code);
     final nodes = _getNodes(tokens);
     _analyseAndTrowsExceptions(nodes);
     final output = _getReadyCode(nodes);
 
-    intermediateFile.createSync(recursive: true);
-    intermediateFile.writeAsStringSync(output);
+    _intermediateFile.writeAsStringSync(output);
 
     _compile();
+
+    return _buildConfig;
   }
 
   // It need to we can call [build] with a custom config
   @override
-  void run() => build(config);
+  void run() => build(argResults, config);
 }

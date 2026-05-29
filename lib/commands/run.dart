@@ -3,7 +3,7 @@ import 'dart:io' show Process;
 import 'package:kebab/commands/build.dart';
 import 'commands.dart';
 
-final class CommandRun extends KebabCommand {
+final class CommandRun extends Command {
   @override
   final String name = 'run';
   @override
@@ -17,8 +17,8 @@ final class CommandRun extends KebabCommand {
 
   @override
   void run() {
-    CommandBuild().build(config);
-    final runResult = Process.runSync(config.outputFile.path, []);
+    final buildInfo = CommandBuild().build(argResults, config);
+    final runResult = Process.runSync(buildInfo.output.path, []);
 
     if (runResult.exitCode == 0) {
       print(runResult.stdout);
