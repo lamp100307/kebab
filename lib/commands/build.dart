@@ -1,17 +1,27 @@
 import 'dart:io' show File, Process;
 
+import 'package:args/args.dart' show ArgResults;
+import 'package:kebab/build_config.dart';
 import 'package:kebab/config.dart';
 import 'package:kebab/core/core.dart';
 import 'package:kebab/exceptions/exceptions.dart';
 import 'commands.dart';
 
-final class CommandBuild implements ICommand {
+final class CommandBuild extends Command {
   @override
-  final Config config;
-  final File intermediateFile;
+  final String name = 'build';
+  @override
+  final String description = 'Build the project';
 
-  CommandBuild(this.config)
-    : intermediateFile = File('${config.outputFile.path}.cpp');
+  late final BuildConfig _buildConfig;
+  late final File _intermediateFile;
+
+  CommandBuild() : super(CommandType.build) {
+    argParser
+      ..addOption('input', abbr: 'i', help: 'Input file path')
+      ..addOption('output', abbr: 'o', help: 'Output file path')
+      ..addFlag('release', abbr: 'r', help: 'Build in release mode');
+  }
 
   void _debugPrint(final Object item) {
     if (config.debug) {
@@ -49,17 +59,13 @@ final class CommandBuild implements ICommand {
 
   void _compile() {
     final compileResult = Process.runSync('g++', [
-      intermediateFile.path,
+      _intermediateFile.path,
       '-o',
-      config.outputFile.path,
+      _buildConfig.output.path,
     ]);
 
     if (compileResult.exitCode != 0) {
       print('Compilation failed:\n${compileResult.stderr}');
-    }
-
-    if (!config.debug) {
-      intermediateFile.deleteSync();
     }
   }
 
@@ -71,19 +77,33 @@ final class CommandBuild implements ICommand {
     }
   }
 
-  @override
-  void execute() {
-    var code = config.inputFile.readAsStringSync();
+  BuildConfig build(final ArgResults? argResults, final Config config) {
+    _buildConfig = BuildConfig.init(argResults, config);
+    _intermediateFile = File('${_buildConfig.output.path}.cpp');
 
-    code = Preprocessor(code).preprocess();
-    final tokens = _getTokens(code);
+    _debugPrint(
+      'Building ${_buildConfig.target.path} to ${_buildConfig.output.path}',
+    );
+
+    final code = _buildConfig.target.readAsStringSync();
+
+    final preprocessedCode = Preprocessor(code).preprocess();
+    final tokens = _getTokens(preprocessedCode);
     final nodes = _getNodes(tokens);
     _analyseAndTrowsExceptions(nodes);
     final output = _getReadyCode(nodes);
 
-    intermediateFile.createSync(recursive: true);
-    intermediateFile.writeAsStringSync(output);
+    _intermediateFile.createSync(recursive: true);
+    _intermediateFile.writeAsStringSync(output);
 
     _compile();
+
+    if (!config.debug) _intermediateFile.deleteSync();
+
+    return _buildConfig;
   }
+
+  // It need to we can call [build] with a custom config
+  @override
+  void run() => build(argResults, config);
 }
