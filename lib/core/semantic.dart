@@ -1,4 +1,4 @@
-import 'package:kebab/exceptions/exceptions.dart';
+import '../exceptions/exceptions.dart';
 import 'ast_node.dart';
 
 class SemanticAnalyser {
@@ -73,7 +73,7 @@ class SemanticAnalyser {
       case VarRefNode():
       case BreakNode():
       case ContinueNode():
-        // leaf nodes are handled in expressions
+        // Leaf nodes are handled in expressions
         break;
 
       default:
@@ -98,7 +98,7 @@ class SemanticAnalyser {
     final KebabType? type,
     final ASTNode? value,
   ) {
-    // checking for a repeat declaration
+    // Checking for a repeat declaration
     if (variables.containsKey(name)) {
       errors.add(SemanticVarAlreadyDefinedException(name));
       return;
@@ -108,13 +108,13 @@ class SemanticAnalyser {
       final valueType = _astNodeToType(value);
 
       if (type != null) {
-        // checking for typing compatible
+        // Checking for typing compatible
         if (!_areTypesCompatible(type, valueType)) {
           errors.add(SemanticTypeMismatchException(type, valueType));
         }
         variables[name] = type;
       } else {
-        // type output
+        // Type output
         variables[name] = valueType;
       }
     } else {
@@ -152,7 +152,7 @@ class SemanticAnalyser {
     final leftType = _astNodeToType(left);
     final rightType = _astNodeToType(right);
 
-    // checking for numeric types for arithmetic
+    // Checking for numeric types for arithmetic
     if (op == '+' || op == '-' || op == '*' || op == '/') {
       if (leftType is! NumType && leftType is! FloatType) {
         errors.add(SemanticOpUnexpexctedTypeException(leftType, op, Side.left));
@@ -179,7 +179,7 @@ class SemanticAnalyser {
   KebabType _astNodeToType(final ASTNode node) {
     switch (node) {
       case IntNode():
-        return I32(); // default int literal is i32
+        return I32(); // Default int literal is i32
 
       case StrNode():
         return Str();
@@ -212,34 +212,34 @@ class SemanticAnalyser {
   }
 
   bool _areTypesCompatible(final KebabType target, final KebabType source) {
-    // Ssame type
+    // Same type
     if (target.runtimeType == source.runtimeType) return true;
 
-    // numeric promotion
+    // Numeric promotion
     if (target is NumType && source is NumType) {
-      return true; // all numbers are compatible (with loss of precision)
+      return true; // All numbers are compatible (with loss of precision)
     }
 
     if (target is FloatType && source is NumType) {
-      return true; // int can be promoted to float
+      return true; // Int can be promoted to Float
     }
 
     return false;
   }
 
   KebabType _typeFromTwo(final KebabType type1, final KebabType type2) {
-    // if either type is Float, result is Float
+    // If either type is Float, result is Float
     if (type1 is FloatType || type2 is FloatType) {
       if (type1 is F64 || type2 is F64) return F64();
       return F32();
     }
 
-    // both numbers
+    // Both numbers
     if (type1 is NumType && type2 is NumType) {
       return _biggerNumType(type1, type2);
     }
 
-    // if types are incompatible, return type1 as fallback
+    // If types are incompatible, return [type1] as fallback
     errors.add(SemanticIncompatibleException(type1, type2));
     return type1;
   }

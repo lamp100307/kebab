@@ -1,4 +1,4 @@
-import 'package:kebab/exceptions/exceptions.dart'
+import '../exceptions/exceptions.dart'
     show LexerUnexpectedCharacterException;
 
 import 'token.dart';

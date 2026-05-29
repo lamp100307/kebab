@@ -1,10 +1,11 @@
 import 'dart:io' show File, Process;
 
 import 'package:args/args.dart' show ArgResults;
-import 'package:kebab/build_config.dart';
-import 'package:kebab/config.dart';
-import 'package:kebab/core/core.dart';
-import 'package:kebab/exceptions/exceptions.dart';
+
+import '../build_config.dart';
+import '../config.dart';
+import '../core/core.dart';
+import '../exceptions/exceptions.dart';
 import 'commands.dart';
 
 final class CommandBuild extends Command {

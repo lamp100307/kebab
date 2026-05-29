@@ -1,6 +1,6 @@
 import 'dart:io' show Process;
 
-import 'package:kebab/commands/build.dart';
+import 'build.dart';
 import 'commands.dart';
 
 final class CommandRun extends Command {

@@ -1,5 +1,5 @@
-import 'package:kebab/core/core.dart';
-import 'package:kebab/exceptions/code_location.dart';
+import '../core/core.dart';
+import 'code_location.dart';
 
 part 'lexer_exceptions.dart';
 part 'semantic_exceptions.dart';

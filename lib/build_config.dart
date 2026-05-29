@@ -1,9 +1,10 @@
 import 'dart:io' show File;
 
 import 'package:args/args.dart' show ArgResults;
-import 'package:kebab/config.dart';
-import 'package:kebab/exceptions/exceptions.dart';
 import 'package:path/path.dart' as p;
+
+import 'config.dart';
+import 'exceptions/exceptions.dart';
 
 enum BuildProfile { release, debug }
 

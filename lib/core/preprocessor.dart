@@ -3,7 +3,7 @@ class Preprocessor {
   int pos = 0;
 
   Map<String, String> defs = {};
-  
+
   Preprocessor(this.input);
 
   String preprocess() {
@@ -14,7 +14,7 @@ class Preprocessor {
   String _processDirectives() {
     String result = '';
     pos = 0;
-    
+
     while (pos < input.length) {
       if (input[pos] == '#') {
         _processLine();
@@ -29,7 +29,7 @@ class Preprocessor {
   String _expandMacros(final String text) {
     String result = '';
     int i = 0;
-    
+
     while (i < text.length) {
       if (_isLetter(text[i])) {
         String name = '';
@@ -65,7 +65,7 @@ class Preprocessor {
   void _processLine() {
     pos++;
     final String cmd = _getString(' ');
-    
+
     if (cmd == 'def') {
       final String name = _getString(' ');
       final String value = _getString('\n');
