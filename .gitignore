@@ -1,0 +1,4 @@
+.dart_tool/
+.zed/
+test/**/output/
+build/
