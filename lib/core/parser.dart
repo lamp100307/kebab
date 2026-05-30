@@ -5,7 +5,7 @@ class Parser {
   List<Token> tokens;
   int pos = 0;
 
-  Map<String, int> opPrecedence = {'+': 1, '-': 1, '*': 2, '/': 2};
+  Map<String, int> opPrecedence = {'+': 1, '-': 1, '*': 2, '/': 2, '%': 2, '>': 3, '<': 3, '==': 4, '!=': 4, '>=': 4, '<=': 4};
 
   Parser(this.tokens);
 
@@ -105,6 +105,34 @@ class Parser {
           return VarAssignNode(value, _parseExpression());
         }
         return VarRefNode(value);
+      case Token(type: TokenType.lparen):
+        _next();
+        final expr = _parseExpression();
+        _expect(TokenType.rparen);
+        return expr;
+      case Token(type: TokenType.lbrace):
+        _next();
+        final List<ASTNode> stmts = [];
+        while(!_check(TokenType.rbrace)) {
+          stmts.add(_parseExpression());
+        }
+        _expect(TokenType.rbrace);
+        return BlockNode(stmts);
+      case Token(type: TokenType.keyword, value: final value):
+        switch (value) {
+          case 'if':
+            _next();
+            final condition = _parseExpression();
+            final thenStmt = _parseExpression();
+            ASTNode? elseStmt;
+            if (_check(TokenType.keyword) && _peek()!.value == 'else') {
+              _next();
+              elseStmt = _parseExpression();
+            }
+            return IfNode(condition, thenStmt, elseStmt);
+          default:
+            throw Exception('Unexpected keyword: ${_peek()}');
+        }
       default:
         throw Exception('Unexpected token: ${_peek()}');
     }

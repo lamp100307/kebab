@@ -1,4 +1,4 @@
-enum KebabType { int, string, none }
+enum KebabType { int, string, bool, none }
 
 // Basic class for AST nodes
 abstract class ASTNode {
@@ -83,4 +83,25 @@ class CallNode extends ASTNode {
 
   @override
   String toString() => "CallNode(name: $name, args: $args)";
+}
+
+class BlockNode extends ASTNode {
+  final List<ASTNode> statements;
+
+  BlockNode(this.statements);
+
+  @override
+  String toString() => "BlockNode(statements: $statements)";
+}
+
+class IfNode extends ASTNode {
+  final ASTNode condition;
+  final ASTNode thenBlock;
+  final ASTNode? elseBlock;
+
+  IfNode(this.condition, this.thenBlock, this.elseBlock);
+
+  @override
+  String toString() =>
+      "IfNode(condition: $condition, thenBlock: $thenBlock, elseBlock: $elseBlock)";
 }

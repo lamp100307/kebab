@@ -47,6 +47,10 @@ class Lexer {
 
       case '=':
         pos++;
+        if (pos < code.length && code[pos] == '=') {
+          pos++;
+          return Token(TokenType.op, '==');
+        }
         return Token(TokenType.assign, '=');
 
       case '(':
@@ -56,6 +60,14 @@ class Lexer {
       case ')':
         pos++;
         return Token(TokenType.rparen, ')');
+
+      case '{':
+        pos++;
+        return Token(TokenType.lbrace, '{');
+
+      case '}':
+        pos++;
+        return Token(TokenType.rbrace, '}');
 
       case ',':
         pos++;
@@ -143,6 +155,10 @@ class Lexer {
     }
     final value = code.substring(start, pos);
 
+    if (value == 'if' || value == 'else') {
+      return Token(TokenType.keyword, value);
+    }
+
     return Token(TokenType.id, value);
   }
 
@@ -166,6 +182,7 @@ class Lexer {
       if ((char == '>' && nextChar == '=') ||
           (char == '<' && nextChar == '=') ||
           (char == '!' && nextChar == '=') ||
+          (char == '=' && nextChar == '=') ||
           (char == '+' && nextChar == '+') ||
           (char == '-' && nextChar == '-')) {
         pos++;

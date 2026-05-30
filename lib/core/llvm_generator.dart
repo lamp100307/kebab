@@ -3,41 +3,52 @@ import 'ast_nodes.dart';
 class LLVMGenerator {
   final StringBuffer _ir = StringBuffer();
   int _nextRegister = 1;
+  int _nextLabel = 1;
   final Map<String, String> _variables = {}; // name -> LLVM register (alloca)
   final List<String> _stringLiterals = [];
+  final List<Map<String, String>> _variableScopes = []; // Для отслеживания областей видимости
 
   String addDependencies(final ASTNode node) {
     String result = '';
     bool hasPrint = false;
-    switch (node) {
-      case ProgramNode(statements: final statements):
-        for (final statement in statements) {
-          switch (statement) {
-            case CallNode(name: final name):
-              if (name == 'print' && !hasPrint) {
-                result += 'declare i32 @printf(i8*, ...)\n';
-                hasPrint = true;
-              }
-            default:
-              break;
-          }
+    
+    void traverse(ASTNode n) {
+      if (n is ProgramNode) {
+        for (final statement in n.statements) {
+          traverse(statement);
         }
-      default:
-        break;
+      } else if (n is CallNode && n.name == 'print' && !hasPrint) {
+        result += 'declare i32 @printf(i8*, ...)\n';
+        hasPrint = true;
+      } else if (n is BlockNode) {
+        for (final statement in n.statements) {
+          traverse(statement);
+        }
+      } else if (n is IfNode) {
+        traverse(n.condition);
+        traverse(n.thenBlock);
+        if (n.elseBlock != null) traverse(n.elseBlock!);
+      } else if (n is BOPNode) {
+        traverse(n.left);
+        traverse(n.right);
+      }
     }
+    
+    traverse(node);
     return result;
   }
 
   String generate(final ASTNode node) {
     _ir.clear();
     _nextRegister = 1;
+    _nextLabel = 1;
     _variables.clear();
     _stringLiterals.clear();
+    _variableScopes.clear();
 
     _ir.writeln('; ModuleID = "kebab"');
     _ir.writeln('target triple = "x86_64-pc-linux-gnu"');
     _ir.writeln(addDependencies(node));
-    _ir.writeln();
     _ir.writeln();
     _ir.writeln();
 
@@ -47,6 +58,19 @@ class LLVMGenerator {
   }
 
   String _newRegister() => '%${_nextRegister++}';
+  String _newLabel() => 'label${_nextLabel++}';
+
+  void _pushScope() {
+    _variableScopes.add(Map.from(_variables));
+  }
+
+  void _popScope() {
+    if (_variableScopes.isNotEmpty) {
+      final previousScope = _variableScopes.removeLast();
+      _variables.clear();
+      _variables.addAll(previousScope);
+    }
+  }
 
   void _generateNode(final ASTNode node) {
     if (node is ProgramNode) {
@@ -80,9 +104,95 @@ class LLVMGenerator {
       _generateCall(node);
     } else if (node is BOPNode) {
       _generateExpr(node);
+    } else if (node is BlockNode) {
+      _generateBlock(node);
+    } else if (node is IfNode) {
+      _generateIf(node);
     } else {
       throw Exception('Unknown statement: ${node.runtimeType}');
     }
+  }
+
+  void _generateBlock(final BlockNode node) {
+    _pushScope();
+    for (final statement in node.statements) {
+      _generateStatement(statement);
+    }
+    _popScope();
+  }
+
+  void _generateIf(final IfNode node) {
+    // Генерируем условие
+    final condReg = _generateCondition(node.condition);
+    
+    final thenLabel = _newLabel();
+    final elseLabel = _newLabel();
+    final endLabel = _newLabel();
+    
+    // Условный переход
+    _ir.writeln('  br i1 $condReg, label %$thenLabel, label %${node.elseBlock != null ? elseLabel : endLabel}');
+    
+    // Then блок
+    _ir.writeln('$thenLabel:');
+    _pushScope();
+    _generateStatement(node.thenBlock);
+    _popScope();
+    _ir.writeln('  br label %$endLabel');
+    
+    // Else блок (если есть)
+    if (node.elseBlock != null) {
+      _ir.writeln('$elseLabel:');
+      _pushScope();
+      _generateStatement(node.elseBlock!);
+      _popScope();
+      _ir.writeln('  br label %$endLabel');
+    }
+    
+    // Конец if
+    _ir.writeln('$endLabel:');
+  }
+
+  String _generateCondition(final ASTNode node) {
+    if (node is BOPNode) {
+      return _generateComparison(node);
+    } else {
+      // Простое значение как условие
+      final value = _generateExpr(node);
+      final result = _newRegister();
+      _ir.writeln('  $result = icmp ne i32 $value, 0');
+      return result;
+    }
+  }
+
+  String _generateComparison(final BOPNode node) {
+    final left = _generateExpr(node.left);
+    final right = _generateExpr(node.right);
+    final result = _newRegister();
+    
+    switch (node.op) {
+      case '==':
+        _ir.writeln('  $result = icmp eq i32 $left, $right');
+        break;
+      case '!=':
+        _ir.writeln('  $result = icmp ne i32 $left, $right');
+        break;
+      case '<':
+        _ir.writeln('  $result = icmp slt i32 $left, $right');
+        break;
+      case '<=':
+        _ir.writeln('  $result = icmp sle i32 $left, $right');
+        break;
+      case '>':
+        _ir.writeln('  $result = icmp sgt i32 $left, $right');
+        break;
+      case '>=':
+        _ir.writeln('  $result = icmp sge i32 $left, $right');
+        break;
+      default:
+        throw Exception('Unknown comparison operator: ${node.op}');
+    }
+    
+    return result;
   }
 
   void _generateVarDecl(final VarDeclNode node) {
@@ -109,6 +219,13 @@ class LLVMGenerator {
     } else if (node is StringNode) {
       return _getStringLiteralPtr(node.value);
     } else if (node is BOPNode) {
+      // Если это оператор сравнения, то нужно сгенерировать условие
+      if (_isComparisonOperator(node.op)) {
+        final cond = _generateComparison(node);
+        final result = _newRegister();
+        _ir.writeln('  $result = zext i1 $cond to i32');
+        return result;
+      }
       return _generateBinaryOp(node);
     } else if (node is VarRefNode) {
       return _generateVarRef(node);
@@ -118,6 +235,10 @@ class LLVMGenerator {
     } else {
       throw Exception('Unknown expression: ${node.runtimeType}');
     }
+  }
+
+  bool _isComparisonOperator(String op) {
+    return op == '==' || op == '!=' || op == '<' || op == '<=' || op == '>' || op == '>=';
   }
 
   String _generateBinaryOp(final BOPNode node) {

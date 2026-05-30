@@ -64,6 +64,17 @@ class SemanticAnalyser {
         if (name != 'print') {
           errors.add(SemanticUnimplementedException());
         }
+      case BlockNode(statements: final statements):
+        for (final statement in statements) {
+          analyseNode(statement, scope);
+        }
+      case IfNode(condition: final condition, thenBlock: final thenBlock, elseBlock: final elseBlock):
+        analyseNode(condition, scope);
+        analyseNode(thenBlock, scope);
+        if (elseBlock != null) {
+          analyseNode(elseBlock, scope);
+        }
+        return;
       default:
         return;
     }
@@ -75,7 +86,10 @@ class SemanticAnalyser {
         return KebabType.int;
       case StringNode():
         return KebabType.string;
-      case BOPNode(left: final left, right: final right):
+      case BOPNode(left: final left, op: final op, right: final right):
+        if (['>', '>=', '<', '<='].contains(op)) {
+          return KebabType.bool;
+        }
         return typeFromTwo(getNodeType(left, scope), getNodeType(right, scope));
       case VarDeclNode():
         return KebabType.none;
