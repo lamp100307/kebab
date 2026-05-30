@@ -128,3 +128,22 @@ class WhileNode extends ASTNode {
   @override
   String toString() => "WhileNode(condition: $condition, block: $block)";
 }
+
+class LoopNode extends ASTNode {
+  final ASTNode block;
+
+  LoopNode(this.block);
+
+  @override
+  String toString() => "LoopNode()";
+}
+
+class BreakNode extends ASTNode {
+  @override
+  String toString() => "BreakNode()";
+}
+
+class ContinueNode extends ASTNode {
+  @override
+  String toString() => "ContinueNode()";
+}

@@ -24,7 +24,8 @@ class SemanticAnalyser {
   void analyseNode(final ASTNode node, final Scope scope) {
     switch (node) {
       case IntNode():
-        return;
+      case BreakNode():
+      case ContinueNode():
       case StringNode():
         return;
       case BOPNode(left: final left, right: final right):
@@ -98,6 +99,9 @@ class SemanticAnalyser {
           errors.add(SemanticTypeMismatchException(KebabType.bool, getNodeType(condition, scope)));
         }
         return;
+      case LoopNode(block: final block):
+        analyseNode(block, scope);
+        return;
       default:
         return;
     }
@@ -110,7 +114,7 @@ class SemanticAnalyser {
       case StringNode():
         return KebabType.string;
       case BOPNode(left: final left, op: final op, right: final right):
-        if (['>', '>=', '<', '<='].contains(op)) {
+        if (['>', '>=', '<', '<=', '==', '!='].contains(op)) {
           return KebabType.bool;
         }
         return typeFromTwo(getNodeType(left, scope), getNodeType(right, scope));

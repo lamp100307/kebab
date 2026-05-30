@@ -7,6 +7,9 @@ class LLVMGenerator {
   final Map<String, String> _variables = {}; // name -> LLVM register (alloca)
   final List<String> _stringLiterals = [];
   final List<Map<String, String>> _variableScopes = []; // Scopes of variables
+  
+  // Стек для отслеживания меток циклов (continueLabel, breakLabel)
+  final List<_LoopLabels> _loopStack = [];
 
   String addDependencies(final ASTNode node) {
     String result = '';
@@ -39,6 +42,8 @@ class LLVMGenerator {
       } else if (n is WhileNode) {
         traverse(n.condition);
         traverse(n.block);
+      } else if (n is LoopNode) {
+        traverse(n.block);
       }
     }
     
@@ -53,6 +58,7 @@ class LLVMGenerator {
     _variables.clear();
     _stringLiterals.clear();
     _variableScopes.clear();
+    _loopStack.clear();
 
     _ir.writeln('; ModuleID = "kebab"');
     _ir.writeln('target triple = "x86_64-pc-linux-gnu"');
@@ -79,6 +85,18 @@ class LLVMGenerator {
       _variables.addAll(previousScope);
     }
   }
+
+  void _pushLoop(final String continueLabel, final String breakLabel) {
+    _loopStack.add(_LoopLabels(continueLabel, breakLabel));
+  }
+
+  void _popLoop() {
+    if (_loopStack.isNotEmpty) {
+      _loopStack.removeLast();
+    }
+  }
+
+  _LoopLabels? _getCurrentLoop() => _loopStack.isNotEmpty ? _loopStack.last : null;
 
   void _generateNode(final ASTNode node) {
     if (node is ProgramNode) {
@@ -120,6 +138,12 @@ class LLVMGenerator {
       _generateFor(node);
     } else if (node is WhileNode) {
       _generateWhile(node);
+    } else if (node is LoopNode) {
+      _generateLoop(node);
+    } else if (node is BreakNode) {
+      _generateBreak(node);
+    } else if (node is ContinueNode) {
+      _generateContinue(node);
     } else {
       throw Exception('Unknown statement: ${node.runtimeType}');
     }
@@ -175,33 +199,57 @@ class LLVMGenerator {
     }
   }
 
+  void _generateLoop(final LoopNode node) {
+    final continueLabel = _newLabel(); // Метка для continue (переход в начало)
+    final breakLabel = _newLabel();    // Метка для break (выход из цикла)
+
+    _pushLoop(continueLabel, breakLabel);
+    _pushScope();
+    
+    _ir.writeln('  br label %$continueLabel');
+    _ir.writeln('$continueLabel:');
+    _generateStatement(node.block);
+    _ir.writeln('  br label %$continueLabel');
+    
+    _ir.writeln('$breakLabel:');
+    
+    _popScope();
+    _popLoop();
+  }
+
   void _generateWhile(final WhileNode node) {
     final condLabel = _newLabel();
-    final bodyLabel = _newLabel();
-    final endLabel = _newLabel();
+    final continueLabel = _newLabel(); // Метка для continue (переход к проверке условия)
+    final breakLabel = _newLabel();    // Метка для break (выход из цикла)
 
+    _pushLoop(continueLabel, breakLabel);
     _pushScope();
+    
     _ir.writeln('  br label %$condLabel');
-
+    
     _ir.writeln('$condLabel:');
     final condReg = _generateCondition(node.condition);
-    _ir.writeln('  br i1 $condReg, label %$bodyLabel, label %$endLabel');
-
-    _ir.writeln('$bodyLabel:');
+    _ir.writeln('  br i1 $condReg, label %$continueLabel, label %$breakLabel');
+    
+    _ir.writeln('$continueLabel:');
     _generateStatement(node.block);
     _ir.writeln('  br label %$condLabel');
-
-    _ir.writeln('$endLabel:');
+    
+    _ir.writeln('$breakLabel:');
+    
     _popScope();
+    _popLoop();
   }
 
   void _generateFor(final ForNode node) {
     final condLabel = _newLabel();
-    final bodyLabel = _newLabel();
+    final continueLabel = _newLabel(); // Метка для continue (переход к шагу)
     final stepLabel = _newLabel();
-    final endLabel = _newLabel();
+    final breakLabel = _newLabel();    // Метка для break (выход из цикла)
 
+    _pushLoop(continueLabel, breakLabel);
     _pushScope();
+    
     if (node.init != null) {
       _generateStatement(node.init!);
     }
@@ -210,9 +258,9 @@ class LLVMGenerator {
 
     _ir.writeln('$condLabel:');
     final condReg = _generateCondition(node.cond);
-    _ir.writeln('  br i1 $condReg, label %$bodyLabel, label %$endLabel');
+    _ir.writeln('  br i1 $condReg, label %$continueLabel, label %$breakLabel');
 
-    _ir.writeln('$bodyLabel:');
+    _ir.writeln('$continueLabel:');
     _generateStatement(node.block);
     _ir.writeln('  br label %$stepLabel');
 
@@ -222,8 +270,26 @@ class LLVMGenerator {
     }
     _ir.writeln('  br label %$condLabel');
 
-    _ir.writeln('$endLabel:');
+    _ir.writeln('$breakLabel:');
+    
     _popScope();
+    _popLoop();
+  }
+
+  void _generateBreak(final BreakNode node) {
+    final currentLoop = _getCurrentLoop();
+    if (currentLoop == null) {
+      throw Exception('Break statement outside of loop');
+    }
+    _ir.writeln('  br label %${currentLoop.breakLabel}');
+  }
+
+  void _generateContinue(final ContinueNode node) {
+    final currentLoop = _getCurrentLoop();
+    if (currentLoop == null) {
+      throw Exception('Continue statement outside of loop');
+    }
+    _ir.writeln('  br label %${currentLoop.continueLabel}');
   }
 
   String _generateComparison(final BOPNode node) {
@@ -417,4 +483,12 @@ class LLVMGenerator {
       .replaceAll('\n', '\\0A')
       .replaceAll('\r', '\\0D')
       .replaceAll('\t', '\\09');
+}
+
+// Вспомогательный класс для хранения меток цикла
+class _LoopLabels {
+  final String continueLabel;
+  final String breakLabel;
+  
+  _LoopLabels(this.continueLabel, this.breakLabel);
 }

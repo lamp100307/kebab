@@ -156,6 +156,19 @@ class Parser {
            }
            final body = _parseExpression();
            return WhileNode(cond, body);
+          case 'loop':
+            _next();
+            if (!_check(TokenType.lbrace)) {
+              throw Exception('Loop body will be in {}');
+            }
+            final body = _parseExpression();
+            return LoopNode(body);
+          case 'break':
+            _next();
+            return BreakNode();
+          case 'continue':
+            _next();
+            return ContinueNode();
           default:
             throw Exception('Unexpected keyword: ${_peek()}');
         }
