@@ -44,23 +44,22 @@ class Lexer {
     }
 
     // Operatiors and punctuation
+    pos++;
     switch (char) {
       case '+' || '-' || '*' || '%' || '>' || '<' || '!':
         return _readOperator();
 
       case '/':
-        if (pos + 1 < code.length && code[pos + 1] == '/') {
-          pos += 2;
+        if (pos < code.length && code[pos] == '/') {
+          pos++;
           while (pos < code.length && code[pos] != '\n') {
             pos++;
           }
         } else {
-          pos++;
           return Token(TokenType.op, '/');
         }
 
       case '=':
-        pos++;
         if (pos < code.length && code[pos] == '=') {
           pos++;
           return Token(TokenType.op, '==');
@@ -71,31 +70,24 @@ class Lexer {
         return Token(TokenType.assign, '=');
 
       case '(':
-        pos++;
         return Token(TokenType.lparen, '(');
 
       case ')':
-        pos++;
         return Token(TokenType.rparen, ')');
 
       case '{':
-        pos++;
         return Token(TokenType.lbrace, '{');
 
       case '}':
-        pos++;
         return Token(TokenType.rbrace, '}');
 
       case ',':
-        pos++;
         return Token(TokenType.comma, ',');
 
       case ':':
-        pos++;
         return Token(TokenType.colon, ':');
 
       case ';':
-        pos++;
         return Token(TokenType.semicolon, ';');
 
       case _:
@@ -190,8 +182,7 @@ class Lexer {
   }
 
   Token _readOperator() {
-    final char = code[pos];
-    pos++;
+    final char = code[pos - 1];
 
     // Two character operators
     if (pos < code.length) {
