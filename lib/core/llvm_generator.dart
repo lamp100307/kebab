@@ -163,7 +163,6 @@ class LLVMGenerator {
     if (node is BOPNode) {
       return _generateComparison(node);
     } else {
-      // Простое значение как условие
       final value = _generateExpr(node);
       final result = _newRegister();
       _ir.writeln('  $result = icmp ne i32 $value, 0');
@@ -257,7 +256,6 @@ class LLVMGenerator {
     } else if (node is StringNode) {
       return _getStringLiteralPtr(node.value);
     } else if (node is BOPNode) {
-      // Если это оператор сравнения, то нужно сгенерировать условие
       if (_isComparisonOperator(node.op)) {
         final cond = _generateComparison(node);
         final result = _newRegister();
