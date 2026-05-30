@@ -6,7 +6,24 @@ import 'package:path/path.dart' as p;
 import 'config.dart';
 import 'exceptions/exceptions.dart';
 
-enum BuildProfile { release, debug }
+enum BuildProfile {
+  release(2),
+  debug(0);
+
+  final int optimisationLevel;
+
+  const BuildProfile(this.optimisationLevel);
+
+  factory BuildProfile.fromString(final String str) => switch (str) {
+    'release' => BuildProfile.release,
+    'debug' => BuildProfile.debug,
+    // TODO: make this a custom exception
+    _ => throw UnimplementedError('Unknown build profile: $str'),
+  };
+
+  factory BuildProfile.fromBool(final bool? isRelease) =>
+      isRelease ?? false ? BuildProfile.release : BuildProfile.debug;
+}
 
 final class BuildConfig {
   final File target;
@@ -19,8 +36,11 @@ final class BuildConfig {
     if (config.debug) print("BuildConfig.init: argResults=$argResults");
     final input = _resolveInputFile(argResults, config);
     final output = _resolveOutputFile(argResults, config, input);
-    if (config.debug) print("BuildConfig.init: target=$input, output=$output");
-    return BuildConfig(input, output);
+    final mode = BuildProfile.fromBool(argResults?['release']);
+    if (config.debug) {
+      print("BuildConfig.init: target=$input, output=$output, mode=$mode");
+    }
+    return BuildConfig(input, output, mode: mode);
   }
 
   static File _resolveInputFile(

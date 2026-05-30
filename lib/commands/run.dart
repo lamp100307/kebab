@@ -1,6 +1,5 @@
-import 'dart:io' show Process;
-
-import 'build.dart';
+import '../build_config.dart';
+import '../services/services.dart';
 import 'commands.dart';
 
 final class CommandRun extends Command {
@@ -8,22 +7,11 @@ final class CommandRun extends Command {
   final String name = 'run';
   @override
   final String description = 'Run the application';
+  @override
+  BaseService get service => RunService(config);
 
-  CommandRun() : super(CommandType.run) {
-    argParser
-      ..addOption('input', abbr: 'i', help: 'Input file path')
-      ..addOption('output', abbr: 'o', help: 'Output file path');
-  }
+  CommandRun() : super(CommandType.run);
 
   @override
-  void run() {
-    final buildInfo = CommandBuild().build(argResults, config);
-    final runResult = Process.runSync(buildInfo.output.path, []);
-
-    if (runResult.exitCode == 0) {
-      print(runResult.stdout);
-    } else {
-      print('Execution failed:\n${runResult.stderr}');
-    }
-  }
+  void run() => service.execute(BuildConfig.init(argResults, config));
 }
