@@ -3,8 +3,16 @@ import 'token.dart';
 class Lexer {
   int pos = 0;
   final String code;
-  
-  final List<String> keywords = ['if', 'else', 'for', 'while', 'loop', 'break', 'continue'];
+
+  final List<String> keywords = [
+    'if',
+    'else',
+    'for',
+    'while',
+    'loop',
+    'break',
+    'continue',
+  ];
   Lexer(this.code);
 
   List<Token> tokenize() {
@@ -37,19 +45,13 @@ class Lexer {
 
     // Operatiors and punctuation
     switch (char) {
-      case '+':
-      case '-':
-      case '*':
-      case '%':
-      case '>':
-      case '<':
-      case '!':
+      case '+' || '-' || '*' || '%' || '>' || '<' || '!':
         return _readOperator();
 
       case '/':
         if (pos + 1 < code.length && code[pos + 1] == '/') {
           pos += 2;
-          while ( pos < code.length && code[pos] != '\n') {
+          while (pos < code.length && code[pos] != '\n') {
             pos++;
           }
         } else {
@@ -95,8 +97,8 @@ class Lexer {
       case ';':
         pos++;
         return Token(TokenType.semicolon, ';');
-      
-      default:
+
+      case _:
         throw Exception('Unexpected character: $char at position $pos');
     }
   }
@@ -136,7 +138,7 @@ class Lexer {
           case '"':
             buffer.write('"');
             break;
-          default:
+          case _:
             buffer.write('\\$char');
         }
         escaped = false;

@@ -69,17 +69,31 @@ class SemanticAnalyser {
         for (final statement in statements) {
           analyseNode(statement, scope);
         }
-      case IfNode(condition: final condition, thenBlock: final thenBlock, elseBlock: final elseBlock):
+      case IfNode(
+        condition: final condition,
+        thenBlock: final thenBlock,
+        elseBlock: final elseBlock,
+      ):
         analyseNode(condition, scope);
         analyseNode(thenBlock, scope);
         if (elseBlock != null) {
           analyseNode(elseBlock, scope);
         }
         if (getNodeType(condition, scope) != KebabType.bool) {
-          errors.add(SemanticTypeMismatchException(KebabType.bool, getNodeType(condition, scope)));
+          errors.add(
+            SemanticTypeMismatchException(
+              KebabType.bool,
+              getNodeType(condition, scope),
+            ),
+          );
         }
         return;
-      case ForNode(init: final init, cond: final cond, step: final step, block: final block):
+      case ForNode(
+        init: final init,
+        cond: final cond,
+        step: final step,
+        block: final block,
+      ):
         if (init != null) {
           analyseNode(init, scope);
         }
@@ -89,20 +103,30 @@ class SemanticAnalyser {
         }
         analyseNode(block, scope);
         if (getNodeType(cond, scope) != KebabType.bool) {
-          errors.add(SemanticTypeMismatchException(KebabType.bool, getNodeType(cond, scope)));
+          errors.add(
+            SemanticTypeMismatchException(
+              KebabType.bool,
+              getNodeType(cond, scope),
+            ),
+          );
         }
         return;
       case WhileNode(condition: final condition, block: final block):
         analyseNode(condition, scope);
         analyseNode(block, scope);
         if (getNodeType(condition, scope) != KebabType.bool) {
-          errors.add(SemanticTypeMismatchException(KebabType.bool, getNodeType(condition, scope)));
+          errors.add(
+            SemanticTypeMismatchException(
+              KebabType.bool,
+              getNodeType(condition, scope),
+            ),
+          );
         }
         return;
       case LoopNode(block: final block):
         analyseNode(block, scope);
         return;
-      default:
+      case _:
         return;
     }
   }

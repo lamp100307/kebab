@@ -5,7 +5,19 @@ class Parser {
   List<Token> tokens;
   int pos = 0;
 
-  Map<String, int> opPrecedence = {'+': 1, '-': 1, '*': 2, '/': 2, '%': 2, '>': 3, '<': 3, '==': 4, '!=': 4, '>=': 4, '<=': 4};
+  Map<String, int> opPrecedence = {
+    '+': 1,
+    '-': 1,
+    '*': 2,
+    '/': 2,
+    '%': 2,
+    '>': 3,
+    '<': 3,
+    '==': 4,
+    '!=': 4,
+    '>=': 4,
+    '<=': 4,
+  };
 
   Parser(this.tokens);
 
@@ -113,7 +125,7 @@ class Parser {
       case Token(type: TokenType.lbrace):
         _next();
         final List<ASTNode> stmts = [];
-        while(!_check(TokenType.rbrace)) {
+        while (!_check(TokenType.rbrace)) {
           stmts.add(_parseExpression());
         }
         _expect(TokenType.rbrace);
@@ -145,7 +157,9 @@ class Parser {
             return IfNode(condition, thenStmt, elseStmt);
           case 'for':
             _next();
-            final init = _check(TokenType.semicolon) ? null : _parseExpression();
+            final init = _check(TokenType.semicolon)
+                ? null
+                : _parseExpression();
             _expect(TokenType.semicolon);
             final condition = _parseExpression();
             _expect(TokenType.semicolon);
@@ -165,7 +179,7 @@ class Parser {
               throw Exception('While body will be in {} or =>');
             }
             if (_check(TokenType.doubleArrow)) {
-              _next(); 
+              _next();
             }
             final body = _parseExpression();
             return WhileNode(cond, body);
@@ -185,10 +199,10 @@ class Parser {
           case 'continue':
             _next();
             return ContinueNode();
-          default:
+          case _:
             throw Exception('Unexpected keyword: ${_peek()}');
         }
-      default:
+      case _:
         throw Exception('Unexpected token: ${_peek()}');
     }
   }
@@ -203,10 +217,10 @@ class Parser {
             return KebabType.int;
           case 'String':
             return KebabType.string;
-          default:
+          case _:
             throw Exception('Unexpected type: ${_peek()}');
         }
-      default:
+      case _:
         throw Exception('Unexpected token: ${_peek()}');
     }
   }
