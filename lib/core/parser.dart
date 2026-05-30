@@ -123,10 +123,16 @@ class Parser {
           case 'if':
             _next();
             final condition = _parseExpression();
+            if (!_check(TokenType.lbrace)) {
+              throw Exception('If body will be in {}');
+            }
             final thenStmt = _parseExpression();
             ASTNode? elseStmt;
             if (_check(TokenType.keyword) && _peek()!.value == 'else') {
               _next();
+              if (!_check(TokenType.lbrace)) {
+                throw Exception('Else body will be in {}');
+              }
               elseStmt = _parseExpression();
             }
             return IfNode(condition, thenStmt, elseStmt);
@@ -142,6 +148,14 @@ class Parser {
             }
             final body = _parseExpression();
             return ForNode(init, condition, update, body);
+          case 'while':
+           _next();
+           final cond = _parseExpression();
+           if (!_check(TokenType.lbrace)) {
+             throw Exception('While body will be in {}');
+           }
+           final body = _parseExpression();
+           return WhileNode(cond, body);
           default:
             throw Exception('Unexpected keyword: ${_peek()}');
         }

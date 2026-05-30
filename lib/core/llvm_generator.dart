@@ -12,7 +12,7 @@ class LLVMGenerator {
     String result = '';
     bool hasPrint = false;
     
-    void traverse(ASTNode n) {
+    void traverse(final ASTNode n) {
       if (n is ProgramNode) {
         for (final statement in n.statements) {
           traverse(statement);
@@ -36,6 +36,9 @@ class LLVMGenerator {
         traverse(n.block);
         if (n.step != null) traverse(n.step!);
         if (n.init != null) traverse(n.init!);
+      } else if (n is WhileNode) {
+        traverse(n.condition);
+        traverse(n.block);
       }
     }
     
@@ -115,6 +118,8 @@ class LLVMGenerator {
       _generateIf(node);
     } else if (node is ForNode) {
       _generateFor(node);
+    } else if (node is WhileNode) {
+      _generateWhile(node);
     } else {
       throw Exception('Unknown statement: ${node.runtimeType}');
     }
@@ -168,6 +173,26 @@ class LLVMGenerator {
       _ir.writeln('  $result = icmp ne i32 $value, 0');
       return result;
     }
+  }
+
+  void _generateWhile(final WhileNode node) {
+    final condLabel = _newLabel();
+    final bodyLabel = _newLabel();
+    final endLabel = _newLabel();
+
+    _pushScope();
+    _ir.writeln('  br label %$condLabel');
+
+    _ir.writeln('$condLabel:');
+    final condReg = _generateCondition(node.condition);
+    _ir.writeln('  br i1 $condReg, label %$bodyLabel, label %$endLabel');
+
+    _ir.writeln('$bodyLabel:');
+    _generateStatement(node.block);
+    _ir.writeln('  br label %$condLabel');
+
+    _ir.writeln('$endLabel:');
+    _popScope();
   }
 
   void _generateFor(final ForNode node) {
@@ -273,9 +298,7 @@ class LLVMGenerator {
     }
   }
 
-  bool _isComparisonOperator(String op) {
-    return op == '==' || op == '!=' || op == '<' || op == '<=' || op == '>' || op == '>=';
-  }
+  bool _isComparisonOperator(final String op) => op == '==' || op == '!=' || op == '<' || op == '<=' || op == '>' || op == '>=';
 
   String _generateBinaryOp(final BOPNode node) {
     final left = _generateExpr(node.left);

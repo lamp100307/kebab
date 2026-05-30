@@ -11,7 +11,7 @@ entry:
   br label %label1
 label1:
   %2 = load i32, i32* %1, align 4
-  %3 = icmp sle i32 %2, 100000
+  %3 = icmp sle i32 %2, 10
   br i1 %3, label %label2, label %label4
 label2:
   %4 = load i32, i32* %1, align 4
@@ -24,6 +24,21 @@ label3:
   br label %label1
 label4:
   %8 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.str1, i32 0, i32 0), i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.str2, i32 0, i32 0))
+  %9 = alloca i32, align 4
+  store i32 1, i32* %9, align 4
+  br label %label5
+label5:
+  %10 = load i32, i32* %9, align 4
+  %11 = icmp slt i32 %10, 2048
+  br i1 %11, label %label6, label %label7
+label6:
+  %12 = load i32, i32* %9, align 4
+  %13 = mul i32 %12, 2
+  store i32 %13, i32* %9, align 4
+  %14 = load i32, i32* %9, align 4
+  %15 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.str, i32 0, i32 0), i32 %14)
+  br label %label5
+label7:
   ret i32 0
 }
 

@@ -4,7 +4,7 @@ class Lexer {
   int pos = 0;
   final String code;
   
-  final List<String> keywords = ['if', 'else', 'for'];
+  final List<String> keywords = ['if', 'else', 'for', 'while'];
   Lexer(this.code);
 
   List<Token> tokenize() {

@@ -118,3 +118,13 @@ class ForNode extends ASTNode {
   String toString() =>
       "ForNode(init: $init, cond: $cond, step: $step, block: $block)";
 }
+
+class WhileNode extends ASTNode {
+  final ASTNode condition;
+  final ASTNode block;
+
+  WhileNode(this.condition, this.block);
+
+  @override
+  String toString() => "WhileNode(condition: $condition, block: $block)";
+}

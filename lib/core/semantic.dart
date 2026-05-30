@@ -91,6 +91,13 @@ class SemanticAnalyser {
           errors.add(SemanticTypeMismatchException(KebabType.bool, getNodeType(cond, scope)));
         }
         return;
+      case WhileNode(condition: final condition, block: final block):
+        analyseNode(condition, scope);
+        analyseNode(block, scope);
+        if (getNodeType(condition, scope) != KebabType.bool) {
+          errors.add(SemanticTypeMismatchException(KebabType.bool, getNodeType(condition, scope)));
+        }
+        return;
       default:
         return;
     }
