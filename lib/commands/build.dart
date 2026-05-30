@@ -14,7 +14,6 @@ final class CommandBuild extends Command {
   @override
   final String description = 'Build the project';
 
-  late final BuildConfig _buildConfig;
   late final File _intermediateFile;
 
   CommandBuild() : super(CommandType.build) {
@@ -58,11 +57,11 @@ final class CommandBuild extends Command {
     return output;
   }
 
-  void _compile() {
+  void _compile(final File output) {
     final compileResult = Process.runSync('clang', [
       _intermediateFile.path,
       '-o',
-      _buildConfig.output.path,
+      output.path,
     ]);
 
     if (compileResult.exitCode != 0) {
@@ -79,14 +78,14 @@ final class CommandBuild extends Command {
   }
 
   BuildConfig build(final ArgResults? argResults, final Config config) {
-    _buildConfig = BuildConfig.init(argResults, config);
-    _intermediateFile = File('${_buildConfig.output.path}.ll');
+    final buildConfig = BuildConfig.init(argResults, config);
+    _intermediateFile = File('${buildConfig.output.path}.ll');
 
     _debugPrint(
-      'Building ${_buildConfig.target.path} to ${_buildConfig.output.path}',
+      'Building ${buildConfig.target.path} to ${buildConfig.output.path}',
     );
 
-    final code = _buildConfig.target.readAsStringSync();
+    final code = buildConfig.target.readAsStringSync();
 
     final tokens = _getTokens(code);
     final nodes = _getNodes(tokens);
@@ -96,11 +95,11 @@ final class CommandBuild extends Command {
     _intermediateFile.createSync(recursive: true);
     _intermediateFile.writeAsStringSync(output);
 
-    _compile();
+    _compile(buildConfig.output);
 
     if (!config.debug) _intermediateFile.deleteSync();
 
-    return _buildConfig;
+    return buildConfig;
   }
 
   // It need to we can call [build] with a custom config

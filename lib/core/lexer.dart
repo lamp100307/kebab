@@ -81,7 +81,7 @@ class Lexer {
   }
 
   Token _readString() {
-    final quote = code[pos]; 
+    final quote = code[pos];
     pos++; // skip quote
 
     final start = pos;
@@ -189,5 +189,6 @@ class Lexer {
 
   bool _isLetterOrDigit(final String char) => _isLetter(char) || _isDigit(char);
 
-  bool _isWhitespace(final String char) => char == ' ' || char == '\t' || char == '\n' || char == '\r';
+  bool _isWhitespace(final String char) =>
+      char == ' ' || char == '\t' || char == '\n' || char == '\r';
 }

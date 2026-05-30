@@ -1,7 +1,6 @@
+import '../exceptions/exceptions.dart';
 import 'ast_nodes.dart';
 import 'var.dart';
-
-import '../exceptions/exceptions.dart';
 
 class SemanticAnalyser {
   final ASTNode nodes;
@@ -37,7 +36,9 @@ class SemanticAnalyser {
           errors.add(SemanticVarAlreadyDefinedException(name));
         }
         if (type != null && type != getNodeType(value, scope)) {
-          errors.add(SemanticTypeMismatchException(type, getNodeType(value, scope)));
+          errors.add(
+            SemanticTypeMismatchException(type, getNodeType(value, scope)),
+          );
         }
         final type_ = type ?? getNodeType(value, scope);
         scope.add(Var(name, type_));
@@ -46,7 +47,12 @@ class SemanticAnalyser {
         if (scope.get(name) == null) {
           errors.add(SemanticVarNotDefinedException(name));
         } else if (getNodeType(value, scope) != scope.get(name)!.type) {
-          errors.add(SemanticTypeMismatchException(scope.get(name)!.type, getNodeType(value, scope)));
+          errors.add(
+            SemanticTypeMismatchException(
+              scope.get(name)!.type,
+              getNodeType(value, scope),
+            ),
+          );
         }
         return;
       case VarRefNode(name: final name):

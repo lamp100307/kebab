@@ -1,5 +1,5 @@
-import 'token.dart';
 import 'ast_nodes.dart';
+import 'token.dart';
 
 class Parser {
   List<Token> tokens;
