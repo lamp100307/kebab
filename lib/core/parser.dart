@@ -130,6 +130,18 @@ class Parser {
               elseStmt = _parseExpression();
             }
             return IfNode(condition, thenStmt, elseStmt);
+          case 'for':
+            _next();
+            final init = _check(TokenType.semicolon) ? null : _parseExpression();
+            _expect(TokenType.semicolon);
+            final condition = _parseExpression();
+            _expect(TokenType.semicolon);
+            final update = _check(TokenType.lbrace) ? null : _parseExpression();
+            if (!_check(TokenType.lbrace)) {
+              throw Exception('For body will be in {}');
+            }
+            final body = _parseExpression();
+            return ForNode(init, condition, update, body);
           default:
             throw Exception('Unexpected keyword: ${_peek()}');
         }

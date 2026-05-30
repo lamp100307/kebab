@@ -62,7 +62,7 @@ final class CommandBuild extends Command {
       _intermediateFile.path,
       '-o',
       output.path,
-      '-O3'
+      '-O2'
     ]);
 
     if (compileResult.exitCode != 0) {

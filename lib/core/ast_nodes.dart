@@ -105,3 +105,16 @@ class IfNode extends ASTNode {
   String toString() =>
       "IfNode(condition: $condition, thenBlock: $thenBlock, elseBlock: $elseBlock)";
 }
+
+class ForNode extends ASTNode {
+  final ASTNode? init;
+  final ASTNode cond;
+  final ASTNode? step;
+  final ASTNode block;
+
+  ForNode(this.init, this.cond, this.step, this.block);
+
+  @override
+  String toString() =>
+      "ForNode(init: $init, cond: $cond, step: $step, block: $block)";
+}

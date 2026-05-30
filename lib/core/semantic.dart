@@ -74,6 +74,22 @@ class SemanticAnalyser {
         if (elseBlock != null) {
           analyseNode(elseBlock, scope);
         }
+        if (getNodeType(condition, scope) != KebabType.bool) {
+          errors.add(SemanticTypeMismatchException(KebabType.bool, getNodeType(condition, scope)));
+        }
+        return;
+      case ForNode(init: final init, cond: final cond, step: final step, block: final block):
+        if (init != null) {
+          analyseNode(init, scope);
+        }
+        analyseNode(cond, scope);
+        if (step != null) {
+          analyseNode(step, scope);
+        }
+        analyseNode(block, scope);
+        if (getNodeType(cond, scope) != KebabType.bool) {
+          errors.add(SemanticTypeMismatchException(KebabType.bool, getNodeType(cond, scope)));
+        }
         return;
       default:
         return;

@@ -6,7 +6,7 @@ class LLVMGenerator {
   int _nextLabel = 1;
   final Map<String, String> _variables = {}; // name -> LLVM register (alloca)
   final List<String> _stringLiterals = [];
-  final List<Map<String, String>> _variableScopes = []; // Для отслеживания областей видимости
+  final List<Map<String, String>> _variableScopes = []; // Scopes of variables
 
   String addDependencies(final ASTNode node) {
     String result = '';
@@ -31,6 +31,11 @@ class LLVMGenerator {
       } else if (n is BOPNode) {
         traverse(n.left);
         traverse(n.right);
+      } else if (n is ForNode) {
+        traverse(n.cond);
+        traverse(n.block);
+        if (n.step != null) traverse(n.step!);
+        if (n.init != null) traverse(n.init!);
       }
     }
     
@@ -108,6 +113,8 @@ class LLVMGenerator {
       _generateBlock(node);
     } else if (node is IfNode) {
       _generateIf(node);
+    } else if (node is ForNode) {
+      _generateFor(node);
     } else {
       throw Exception('Unknown statement: ${node.runtimeType}');
     }
@@ -122,24 +129,24 @@ class LLVMGenerator {
   }
 
   void _generateIf(final IfNode node) {
-    // Генерируем условие
+    // Gen condition
     final condReg = _generateCondition(node.condition);
     
     final thenLabel = _newLabel();
     final elseLabel = _newLabel();
     final endLabel = _newLabel();
     
-    // Условный переход
+    // Conditional jump
     _ir.writeln('  br i1 $condReg, label %$thenLabel, label %${node.elseBlock != null ? elseLabel : endLabel}');
     
-    // Then блок
+    // Then block
     _ir.writeln('$thenLabel:');
     _pushScope();
     _generateStatement(node.thenBlock);
     _popScope();
     _ir.writeln('  br label %$endLabel');
     
-    // Else блок (если есть)
+    // Else block (if have)
     if (node.elseBlock != null) {
       _ir.writeln('$elseLabel:');
       _pushScope();
@@ -148,7 +155,7 @@ class LLVMGenerator {
       _ir.writeln('  br label %$endLabel');
     }
     
-    // Конец if
+    // End of if
     _ir.writeln('$endLabel:');
   }
 
@@ -162,6 +169,37 @@ class LLVMGenerator {
       _ir.writeln('  $result = icmp ne i32 $value, 0');
       return result;
     }
+  }
+
+  void _generateFor(final ForNode node) {
+    final condLabel = _newLabel();
+    final bodyLabel = _newLabel();
+    final stepLabel = _newLabel();
+    final endLabel = _newLabel();
+
+    _pushScope();
+    if (node.init != null) {
+      _generateStatement(node.init!);
+    }
+
+    _ir.writeln('  br label %$condLabel');
+
+    _ir.writeln('$condLabel:');
+    final condReg = _generateCondition(node.cond);
+    _ir.writeln('  br i1 $condReg, label %$bodyLabel, label %$endLabel');
+
+    _ir.writeln('$bodyLabel:');
+    _generateStatement(node.block);
+    _ir.writeln('  br label %$stepLabel');
+
+    _ir.writeln('$stepLabel:');
+    if (node.step != null) {
+      _generateStatement(node.step!);
+    }
+    _ir.writeln('  br label %$condLabel');
+
+    _ir.writeln('$endLabel:');
+    _popScope();
   }
 
   String _generateComparison(final BOPNode node) {
