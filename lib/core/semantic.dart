@@ -1,265 +1,98 @@
+import 'ast_nodes.dart';
+import 'var.dart';
+
 import '../exceptions/exceptions.dart';
-import 'ast_node.dart';
 
 class SemanticAnalyser {
-  final List<ASTNode> nodes;
-  final Map<String, KebabType> variables = {}; // symbol-table
+  final ASTNode nodes;
   final List<SemanticException> errors = [];
 
   SemanticAnalyser(this.nodes);
 
   void analyse() {
-    for (var node in nodes) {
-      _analyseNode(node);
+    final Scope globalScope = Scope();
+    switch (nodes) {
+      case ProgramNode(statements: final statements):
+        for (final node in statements) {
+          analyseNode(node, globalScope);
+        }
+        return;
+      default:
+        return;
     }
   }
 
-  void _analyseNode(final ASTNode node) {
+  void analyseNode(final ASTNode node, final Scope scope) {
     switch (node) {
+      case IntNode():
+        return;
+      case StringNode():
+        return;
+      case BOPNode(left: final left, right: final right):
+        analyseNode(left, scope);
+        analyseNode(right, scope);
+        getNodeType(node, scope);
       case VarDeclNode(name: final name, type: final type, value: final value):
-        _analyseVarDecl(name, type, value);
-        break;
-
+        if (scope.get(name) != null) {
+          errors.add(SemanticVarAlreadyDefinedException(name));
+        }
+        if (type != null && type != getNodeType(value, scope)) {
+          errors.add(SemanticTypeMismatchException(type, getNodeType(value, scope)));
+        }
+        final type_ = type ?? getNodeType(value, scope);
+        scope.add(Var(name, type_));
+        return;
       case VarAssignNode(name: final name, value: final value):
-        _analyseVarAssign(name, value);
-        break;
-
-      case OpNode(left: final left, op: final op, right: final right):
-        _analyseOp(left, op, right);
-        break;
-
-      case FuncCallNode(name: final name, args: final args):
-        _analyseFuncCall(name, args);
-        break;
-
-      case IfNode(
-        condition: final cond,
-        thenBlock: final then,
-        elseBlock: final elseBlock,
-      ):
-        _analyseIfNode(cond, then, elseBlock);
-        break;
-
-      case BlockNode(statements: final statements):
-        for (var statement in statements) {
-          _analyseNode(statement);
+        if (scope.get(name) == null) {
+          errors.add(SemanticVarNotDefinedException(name));
+        } else if (getNodeType(value, scope) != scope.get(name)!.type) {
+          errors.add(SemanticTypeMismatchException(scope.get(name)!.type, getNodeType(value, scope)));
         }
-        break;
-
-      case ForNode(
-        init: final init,
-        condition: final condition,
-        update: final update,
-        block: final block,
-      ):
-        if (init != null) {
-          _analyseNode(init);
+        return;
+      case VarRefNode(name: final name):
+        if (scope.get(name) == null) {
+          errors.add(SemanticVarNotDefinedException(name));
         }
-        _analyseNode(condition);
-        if (update != null) {
-          _analyseNode(update);
+        return;
+      case CallNode(name: final name):
+        if (name != 'print') {
+          errors.add(SemanticUnimplementedException());
         }
-        _analyseNode(block);
-        break;
-      case WhileNode(condition: final condition, block: final block):
-        _analyseNode(condition);
-        _analyseNode(block);
-        break;
-      case LoopNode(block: final block):
-        _analyseNode(block);
-        break;
-      case IntNode():
-      case StrNode():
-      case VarRefNode():
-      case BreakNode():
-      case ContinueNode():
-        // Leaf nodes are handled in expressions
-        break;
-
       default:
-        errors.add(SemanticUnknownNodeType(node.runtimeType.toString()));
+        return;
     }
   }
 
-  void _analyseIfNode(
-    final ASTNode cond,
-    final ASTNode then,
-    final ASTNode? else_,
-  ) {
-    _analyseNode(cond);
-    _analyseNode(then);
-    if (else_ != null) {
-      _analyseNode(else_);
-    }
-  }
-
-  void _analyseVarDecl(
-    final String name,
-    final KebabType? type,
-    final ASTNode? value,
-  ) {
-    // Checking for a repeat declaration
-    if (variables.containsKey(name)) {
-      errors.add(SemanticVarAlreadyDefinedException(name));
-      return;
-    }
-
-    if (value != null) {
-      final valueType = _astNodeToType(value);
-
-      if (type != null) {
-        // Checking for typing compatible
-        if (!_areTypesCompatible(type, valueType)) {
-          errors.add(SemanticTypeMismatchException(type, valueType));
-        }
-        variables[name] = type;
-      } else {
-        // Type output
-        variables[name] = valueType;
-      }
-    } else {
-      if (type == null) {
-        errors.add(
-          SemanticVarInitException(
-            'Variable "$name" must have type or initializer',
-          ),
-        );
-      } else {
-        variables[name] = type;
-      }
-    }
-  }
-
-  void _analyseVarAssign(final String name, final ASTNode value) {
-    if (!variables.containsKey(name)) {
-      errors.add(SemanticVarNotDefinedException(name));
-      return;
-    }
-
-    final varType = variables[name]!;
-    final valueType = _astNodeToType(value);
-
-    if (!_areTypesCompatible(varType, valueType)) {
-      errors.add(SemanticTypeMismatchException(varType, valueType));
-    }
-  }
-
-  KebabType _analyseOp(
-    final ASTNode left,
-    final String op,
-    final ASTNode right,
-  ) {
-    final leftType = _astNodeToType(left);
-    final rightType = _astNodeToType(right);
-
-    // Checking for numeric types for arithmetic
-    if (op == '+' || op == '-' || op == '*' || op == '/') {
-      if (leftType is! NumType && leftType is! FloatType) {
-        errors.add(SemanticOpUnexpexctedTypeException(leftType, op, Side.left));
-      }
-      if (rightType is! NumType && rightType is! FloatType) {
-        errors.add(
-          SemanticOpUnexpexctedTypeException(rightType, op, Side.right),
-        );
-      }
-    }
-
-    return _typeFromTwo(leftType, rightType);
-  }
-
-  // TODO: implement function call analysis
-  // For now, assume it returns i32
-  KebabType _analyseFuncCall(final String name, final List<ASTNode> args) {
-    for (final arg in args) {
-      _analyseNode(arg);
-    }
-    return I32();
-  }
-
-  KebabType _astNodeToType(final ASTNode node) {
+  KebabType getNodeType(final ASTNode node, final Scope scope) {
     switch (node) {
       case IntNode():
-        return I32(); // Default int literal is i32
-
-      case StrNode():
-        return Str();
-
-      case OpNode(left: final left, right: final right):
-        final leftType = _astNodeToType(left);
-        final rightType = _astNodeToType(right);
-        return _typeFromTwo(leftType, rightType);
-
+        return KebabType.int;
+      case StringNode():
+        return KebabType.string;
+      case BOPNode(left: final left, right: final right):
+        return typeFromTwo(getNodeType(left, scope), getNodeType(right, scope));
+      case VarDeclNode():
+        return KebabType.none;
+      case VarAssignNode():
+        return KebabType.none;
       case VarRefNode(name: final name):
-        if (!variables.containsKey(name)) {
-          errors.add(SemanticVarNotDefinedException(name));
-          return I32(); // fallback
-        }
-        return variables[name]!;
-
-      case FuncCallNode():
-        return I32(); // TODO: get actual return type
-
-      case VarDeclNode(value: final value):
-        if (value != null) {
-          return _astNodeToType(value);
-        }
-        return I32(); // fallback
-
+        return scope.get(name)!.type;
+      case CallNode():
+        return KebabType.none; // TODO
       default:
-        errors.add(SemanticUnknownNodeType(node.runtimeType.toString()));
-        return I32(); // fallback
+        return KebabType.none;
     }
   }
 
-  bool _areTypesCompatible(final KebabType target, final KebabType source) {
-    // Same type
-    if (target.runtimeType == source.runtimeType) return true;
-
-    // Numeric promotion
-    if (target is NumType && source is NumType) {
-      return true; // All numbers are compatible (with loss of precision)
+  KebabType typeFromTwo(final KebabType first, final KebabType second) {
+    switch ((first, second)) {
+      case (KebabType.int, KebabType.int):
+        return KebabType.int;
+      case (KebabType.string, KebabType.string):
+        return KebabType.string;
+      default:
+        errors.add(SemanticIncompatibleException(first, second));
+        return KebabType.none;
     }
-
-    if (target is FloatType && source is NumType) {
-      return true; // Int can be promoted to Float
-    }
-
-    return false;
-  }
-
-  KebabType _typeFromTwo(final KebabType type1, final KebabType type2) {
-    // If either type is Float, result is Float
-    if (type1 is FloatType || type2 is FloatType) {
-      if (type1 is F64 || type2 is F64) return F64();
-      return F32();
-    }
-
-    // Both numbers
-    if (type1 is NumType && type2 is NumType) {
-      return _biggerNumType(type1, type2);
-    }
-
-    // If types are incompatible, return [type1] as fallback
-    errors.add(SemanticIncompatibleException(type1, type2));
-    return type1;
-  }
-
-  KebabType _biggerNumType(final NumType type1, final NumType type2) {
-    // Type promotion priority (higher number = higher priority)
-    const priority = {
-      I8: 1,
-      U8: 2,
-      I16: 3,
-      U16: 4,
-      I32: 5,
-      U32: 6,
-      I64: 7,
-      U64: 8,
-    };
-
-    final p1 = priority[type1.runtimeType] ?? 0;
-    final p2 = priority[type2.runtimeType] ?? 0;
-
-    return p1 >= p2 ? type1 : type2;
   }
 }

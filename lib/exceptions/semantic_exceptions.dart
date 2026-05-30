@@ -92,3 +92,10 @@ final class SemanticVarAlreadyDefinedException
 
   const SemanticVarAlreadyDefinedException(super.varName, [super.location]);
 }
+
+final class SemanticUnimplementedException extends SemanticException {
+  const SemanticUnimplementedException([super.location]);
+
+  @override
+  String get message => 'Unimplemented';
+}

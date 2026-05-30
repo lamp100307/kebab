@@ -43,23 +43,23 @@ final class CommandBuild extends Command {
     return tokens;
   }
 
-  List<ASTNode> _getNodes(final List<Token> tokens) {
+  ASTNode _getNodes(final List<Token> tokens) {
     final Parser parser = Parser(tokens);
-    final List<ASTNode> nodes = parser.parse();
+    final ASTNode nodes = parser.parse();
     _debugPrint(nodes);
     return nodes;
   }
 
-  String _getReadyCode(final List<ASTNode> nodes) {
-    final Compiler compiler = Compiler(nodes);
-    compiler.addDependencies();
-    final output = compiler.compile();
+  String _getReadyCode(final ASTNode nodes) {
+    final LLVMGenerator compiler = LLVMGenerator();
+    compiler.addDependencies(nodes);
+    final output = compiler.generate(nodes).trim();
     _debugPrint(output);
     return output;
   }
 
   void _compile() {
-    final compileResult = Process.runSync('g++', [
+    final compileResult = Process.runSync('clang', [
       _intermediateFile.path,
       '-o',
       _buildConfig.output.path,
@@ -70,7 +70,7 @@ final class CommandBuild extends Command {
     }
   }
 
-  void _analyseAndTrowsExceptions(final List<ASTNode> nodes) {
+  void _analyseAndTrowsExceptions(final ASTNode nodes) {
     final SemanticAnalyser analyser = SemanticAnalyser(nodes);
     analyser.analyse();
     if (analyser.errors.isNotEmpty) {
@@ -80,7 +80,7 @@ final class CommandBuild extends Command {
 
   BuildConfig build(final ArgResults? argResults, final Config config) {
     _buildConfig = BuildConfig.init(argResults, config);
-    _intermediateFile = File('${_buildConfig.output.path}.cpp');
+    _intermediateFile = File('${_buildConfig.output.path}.ll');
 
     _debugPrint(
       'Building ${_buildConfig.target.path} to ${_buildConfig.output.path}',
@@ -88,8 +88,7 @@ final class CommandBuild extends Command {
 
     final code = _buildConfig.target.readAsStringSync();
 
-    final preprocessedCode = Preprocessor(code).preprocess();
-    final tokens = _getTokens(preprocessedCode);
+    final tokens = _getTokens(code);
     final nodes = _getNodes(tokens);
     _analyseAndTrowsExceptions(nodes);
     final output = _getReadyCode(nodes);

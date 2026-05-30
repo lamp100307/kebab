@@ -1,241 +1,130 @@
-import '../exceptions/exceptions.dart';
-import 'ast_node.dart';
 import 'token.dart';
+import 'ast_nodes.dart';
 
 class Parser {
-  List<ASTNode> nodes = [];
   List<Token> tokens;
   int pos = 0;
 
-  static const Map<String, int> opPrecedence = {
-    "+": 1,
-    "-": 1,
-    "*": 2,
-    "/": 2,
-    "<": 3,
-    ">": 3,
-    "==": 3,
-    "!=": 3,
-    "<=": 3,
-    ">=": 3,
-    "&&": 4,
-    "||": 4,
-    "%": 4,
-  };
+  Map<String, int> opPrecedence = {'+': 1, '-': 1, '*': 2, '/': 2};
 
   Parser(this.tokens);
 
-  Token? _peek() => pos < tokens.length ? tokens[pos] : null;
-
-  Token _consume(final TokenType type) {
-    final token = _peek();
-    if (token != null && token.type == type) {
-      pos++;
-      return token;
+  ASTNode parse() {
+    final List<ASTNode> result = [];
+    while (_peek() != null) {
+      result.add(_parseExpression());
     }
-    throw ParserUnexpectedTokenException(type, token!.value, token.type);
+    return ProgramNode(result);
   }
 
-  Token _consumeWithValue(final TokenType type, final String value) {
-    final token = _peek();
-    if (token != null && token.type == type && token.value == value) {
-      pos++;
-      return token;
+  Token? _peek() {
+    if (pos >= tokens.length) return null;
+    return tokens[pos];
+  }
+
+  Token? _next() {
+    if (pos >= tokens.length) return null;
+    return tokens[pos++];
+  }
+
+  bool _check(final TokenType type) {
+    if (pos >= tokens.length) return false;
+    return tokens[pos].type == type;
+  }
+
+  Token _expect(final TokenType type) {
+    final token = _next();
+    if (token == null) {
+      throw Exception('Unexpected end of input');
+    } else if (token.type != type) {
+      throw Exception('Unexpected token: $token, expected: $type');
     }
-    throw ParserUnexpectedTokenException(type, token!.value, token.type);
+    return token;
   }
 
-  bool _expect(final TokenType type) {
-    final token = _peek();
-    return token != null && token.type == type;
-  }
+  ASTNode _parseExpression({final int minPrecedence = 0}) {
+    ASTNode left = _parseAtom();
 
-  bool _expectWithValue(final TokenType type, final String value) {
-    final token = _peek();
-    return token != null && token.type == type && token.value == value;
-  }
-
-  List<ASTNode> parse() {
-    while (pos < tokens.length) {
-      nodes.add(_parseExpr(0));
-    }
-    return nodes;
-  }
-
-  ASTNode _parseExpr(final int minPrec) {
-    var left = _parseAtom();
-    while (pos < tokens.length) {
-      final Token op = _peek()!;
-      final int prec = opPrecedence[op.value] ?? 0;
-      if (prec == 0 || prec < minPrec) break;
-      pos++;
-      final right = _parseExpr(prec + 1);
-      left = OpNode(left, op.value, right);
+    while (_peek() != null) {
+      final op = _peek();
+      if (op != null &&
+          op.type == TokenType.op &&
+          opPrecedence[op.value] != null &&
+          opPrecedence[op.value]! >= minPrecedence) {
+        _next();
+        final right = _parseExpression(
+          minPrecedence: opPrecedence[op.value]! + 1,
+        );
+        left = BOPNode(left, op.value, right);
+      } else {
+        break;
+      }
     }
     return left;
   }
 
   ASTNode _parseAtom() {
-    final Token token = _peek()!;
-    switch (token.type) {
-      case TokenType.num:
-        pos++;
-        return IntNode(int.parse(token.value));
-      case TokenType.str:
-        pos++;
-        return StrNode(token.value);
-      case TokenType.id:
-        pos++;
-        if (_expectWithValue(TokenType.lParen, '(')) {
-          pos++;
-          if (!_expectWithValue(TokenType.rParen, ')')) {
-            final List<ASTNode> args = [];
-            while (!_expectWithValue(TokenType.rParen, ')')) {
-              if (_expectWithValue(TokenType.comma, ',')) {
-                _consume(TokenType.comma);
-              }
-              args.add(_parseExpr(0));
+    switch (_peek()) {
+      case null:
+        throw Exception('Unexpected end of input');
+      case Token(type: TokenType.int, value: final value):
+        _next();
+        return IntNode(int.parse(value));
+      case Token(type: TokenType.string, value: final value):
+        _next();
+        return StringNode(value);
+      case Token(type: TokenType.id, value: final value):
+        _next();
+        if (_check(TokenType.lparen)) {
+          _next();
+          final args = <ASTNode>[];
+          if (!_check(TokenType.rparen)) {
+            args.add(_parseExpression());
+            while (_check(TokenType.comma)) {
+              _next();
+              args.add(_parseExpression());
             }
-            pos++;
-            return FuncCallNode(token.value, args);
+          }
+          _expect(TokenType.rparen);
+          return CallNode(value, args);
+        }
+        if (_check(TokenType.colon)) {
+          _next();
+          if (_check(TokenType.assign)) {
+            _next();
+            return VarDeclNode(value, null, _parseExpression());
           } else {
-            pos++;
-            return FuncCallNode(token.value, []);
+            final type = _parseType();
+            _next();
+            _expect(TokenType.assign);
+            return VarDeclNode(value, type, _parseExpression());
           }
-        } else {
-          if (_expectWithValue(TokenType.assign, '=')) {
-            pos++;
-            return VarAssignNode(token.value, _parseExpr(0));
-          }
-          return VarRefNode(token.value);
         }
-      case TokenType.lParen:
-        pos++;
-        final expr = _parseExpr(0);
-        _consumeWithValue(TokenType.rParen, ')');
-        return expr;
-      case TokenType.lBrace:
-        pos++;
-        final List<ASTNode> stmts = [];
-        while (pos < tokens.length &&
-            !_expectWithValue(TokenType.rBrace, '}')) {
-          stmts.add(_parseExpr(0));
+        if (_check(TokenType.assign)) {
+          _next();
+          return VarAssignNode(value, _parseExpression());
         }
-        pos++;
-        return BlockNode(stmts);
-      case TokenType.key:
-        switch (token.value) {
-          case "let":
-            pos++;
-            final name = _consume(TokenType.id).value;
-            KebabType? type;
-            if (_expect(TokenType.colon)) {
-              pos++;
-              type = _parseKebabType(_consume(TokenType.id).value);
-            }
-            ASTNode? value;
-            if (_expectWithValue(TokenType.assign, '=')) {
-              pos++;
-              value = _parseExpr(0);
-            }
-            return VarDeclNode(name, type, value);
-          case 'if':
-            pos++;
-            final condition = _parseExpr(0);
-            final thenBlock = _parseExpr(0);
-            final List<ElifNode> elifs = [];
-            ASTNode? elseBlock;
-
-            while (pos < tokens.length && _expect(TokenType.key)) {
-              final keyword = tokens[pos].value;
-
-              if (keyword == 'else') {
-                pos++;
-                if (pos < tokens.length &&
-                    tokens[pos].type == TokenType.key &&
-                    tokens[pos].value == 'if') {
-                  pos++;
-                  final elifCondition = _parseExpr(0);
-                  final elifBlock = _parseExpr(0);
-                  elifs.add(ElifNode(elifCondition, elifBlock));
-                } else {
-                  elseBlock = _parseExpr(0);
-                  break;
-                }
-              } else {
-                break;
-              }
-            }
-
-            return IfNode(condition, thenBlock, elifs, elseBlock);
-          case 'for':
-            pos++;
-            ASTNode? init;
-            if (!_expectWithValue(TokenType.semicolon, ';')) {
-              init = _parseExpr(0);
-            }
-            _consumeWithValue(TokenType.semicolon, ';');
-            final condition = _parseExpr(0);
-            _consumeWithValue(TokenType.semicolon, ';');
-            ASTNode? update;
-            if (!_expectWithValue(TokenType.rBrace, '}')) {
-              update = _parseExpr(0);
-            }
-            final block = _parseExpr(0);
-            return ForNode(init, condition, update, block);
-          case "while":
-            pos++;
-            final condition = _parseExpr(0);
-            final block = _parseExpr(0);
-            return WhileNode(condition, block);
-          case "loop":
-            pos++;
-            final block = _parseExpr(0);
-            return LoopNode(block);
-          case 'break':
-            pos++;
-            return BreakNode();
-          case 'continue':
-            pos++;
-            return ContinueNode();
-          default:
-            throw ParserUnknownKeywordException(token.value);
-        }
+        return VarRefNode(value);
       default:
-        throw ParserUnexpectedTokenException(token.type, token.value);
+        throw Exception('Unexpected token: ${_peek()}');
     }
   }
 
-  KebabType _parseKebabType(final String rawType) {
-    switch (rawType) {
-      case "i8":
-        return I8();
-      case "i16":
-        return I16();
-      case "i32":
-        return I32();
-      case "i64":
-        return I64();
-      case "u8":
-        return U8();
-      case "u16":
-        return U16();
-      case "u32":
-        return U32();
-      case "u64":
-        return U64();
-      case "f32":
-        return F32();
-      case "f64":
-        return F64();
-      case "char":
-        return Char();
-      case "str":
-        return Str();
-      case "bool":
-        return Bool();
+  KebabType _parseType() {
+    switch (_peek()) {
+      case null:
+        throw Exception('Unexpected end of input');
+      case Token(type: TokenType.id, value: final value):
+        switch (value) {
+          case 'int':
+            return KebabType.int;
+          case 'String':
+            return KebabType.string;
+          default:
+            throw Exception('Unexpected type: ${_peek()}');
+        }
       default:
-        throw ParserUnknownTypeException(rawType);
+        throw Exception('Unexpected token: ${_peek()}');
     }
   }
 }
