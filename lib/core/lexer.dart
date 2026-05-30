@@ -62,6 +62,9 @@ class Lexer {
         if (pos < code.length && code[pos] == '=') {
           pos++;
           return Token(TokenType.op, '==');
+        } else if (pos + 1 < code.length && code[pos] == '>') {
+          pos++;
+          return Token(TokenType.doubleArrow, '=>');
         }
         return Token(TokenType.assign, '=');
 

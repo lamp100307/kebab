@@ -123,15 +123,22 @@ class Parser {
           case 'if':
             _next();
             final condition = _parseExpression();
-            if (!_check(TokenType.lbrace)) {
-              throw Exception('If body will be in {}');
+            print(_peek());
+            if (!_check(TokenType.lbrace) && !_check(TokenType.doubleArrow)) {
+              throw Exception('If body will be in {} or =>');
+            }
+            if (_check(TokenType.doubleArrow)) {
+              _next();
             }
             final thenStmt = _parseExpression();
             ASTNode? elseStmt;
             if (_check(TokenType.keyword) && _peek()!.value == 'else') {
               _next();
-              if (!_check(TokenType.lbrace)) {
-                throw Exception('Else body will be in {}');
+              if (!_check(TokenType.lbrace) && !_check(TokenType.doubleArrow)) {
+                throw Exception('Else body will be in {} or =>');
+              }
+              if (_check(TokenType.doubleArrow)) {
+                _next();
               }
               elseStmt = _parseExpression();
             }
@@ -143,23 +150,32 @@ class Parser {
             final condition = _parseExpression();
             _expect(TokenType.semicolon);
             final update = _check(TokenType.lbrace) ? null : _parseExpression();
-            if (!_check(TokenType.lbrace)) {
-              throw Exception('For body will be in {}');
+            if (!_check(TokenType.lbrace) && !_check(TokenType.doubleArrow)) {
+              throw Exception('For body will be in {} or =>');
+            }
+            if (_check(TokenType.doubleArrow)) {
+              _next();
             }
             final body = _parseExpression();
             return ForNode(init, condition, update, body);
           case 'while':
-           _next();
-           final cond = _parseExpression();
-           if (!_check(TokenType.lbrace)) {
-             throw Exception('While body will be in {}');
-           }
-           final body = _parseExpression();
-           return WhileNode(cond, body);
+            _next();
+            final cond = _parseExpression();
+            if (!_check(TokenType.lbrace) && !_check(TokenType.doubleArrow)) {
+              throw Exception('While body will be in {} or =>');
+            }
+            if (_check(TokenType.doubleArrow)) {
+              _next(); 
+            }
+            final body = _parseExpression();
+            return WhileNode(cond, body);
           case 'loop':
             _next();
-            if (!_check(TokenType.lbrace)) {
-              throw Exception('Loop body will be in {}');
+            if (!_check(TokenType.lbrace) && !_check(TokenType.doubleArrow)) {
+              throw Exception('Loop body will be in {} or =>');
+            }
+            if (_check(TokenType.doubleArrow)) {
+              _next();
             }
             final body = _parseExpression();
             return LoopNode(body);

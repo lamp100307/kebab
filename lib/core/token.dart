@@ -12,6 +12,7 @@ enum TokenType {
   colon,
   semicolon,
   assign,
+  doubleArrow,
 }
 
 base class Token {
