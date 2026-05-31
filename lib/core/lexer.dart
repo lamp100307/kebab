@@ -35,7 +35,7 @@ class Lexer {
 
     if (char == '"') {
       return _readString();
-    }
+    } //? Myabe you want to use else if?
     if (_isLetter(char)) {
       return _readIdentifierOrKeyword();
     }
@@ -93,6 +93,7 @@ class Lexer {
       case _:
         throw Exception('Unexpected character: $char at position $pos');
     }
+    return null;
   }
 
   void _skipWhitespace() {

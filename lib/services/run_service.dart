@@ -2,9 +2,10 @@ import 'dart:io' show Process;
 
 import '../build_config.dart';
 import '../config.dart';
+import 'debug_print.dart';
 import 'services.dart';
 
-final class RunService implements BaseService {
+final class RunService with DebugPrint implements BaseService {
   @override
   final Config config;
 

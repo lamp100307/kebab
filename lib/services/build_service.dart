@@ -5,8 +5,9 @@ import '../config.dart';
 import '../core/core.dart';
 import '../exceptions/exceptions.dart';
 import 'services.dart';
+import 'debug_print.dart';
 
-final class BuildService implements BaseService {
+final class BuildService with DebugPrint implements BaseService {
   @override
   final Config config;
   late final BuildConfig _buildConfig;
@@ -15,29 +16,17 @@ final class BuildService implements BaseService {
 
   late final File _intermediateFile;
 
-  void _debugPrint(final Object item) {
-    if (config.debug) {
-      if (item is Iterable) {
-        for (var it in item) {
-          print(it.toString());
-        }
-      } else {
-        print(item.toString());
-      }
-    }
-  }
-
   List<Token> _getTokens(final String code) {
     final lexer = Lexer(code);
     final tokens = lexer.tokenize();
-    _debugPrint(tokens);
+    debugPrint(tokens);
     return tokens;
   }
 
   ASTNode _getNodes(final List<Token> tokens) {
     final Parser parser = Parser(tokens);
     final ASTNode nodes = parser.parse();
-    _debugPrint(nodes);
+    debugPrint(nodes);
     return nodes;
   }
 
@@ -45,7 +34,7 @@ final class BuildService implements BaseService {
     final LLVMGenerator compiler = LLVMGenerator();
     compiler.addDependencies(nodes);
     final output = compiler.generate(nodes).trim();
-    _debugPrint(output);
+    debugPrint(output);
     return output;
   }
 
@@ -75,7 +64,7 @@ final class BuildService implements BaseService {
     _buildConfig = buildConfig;
     _intermediateFile = File('${buildConfig.output.path}.ll');
 
-    _debugPrint(
+    debugPrint(
       'Building ${buildConfig.target.path} to ${buildConfig.output.path}',
     );
 

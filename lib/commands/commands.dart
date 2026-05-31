@@ -6,7 +6,7 @@ import '../services/services.dart';
 
 export 'runner.dart';
 
-enum CommandType { run, build, info }
+enum CommandType { run, build }
 
 abstract class Command extends runner.Command<void> {
   final CommandType command;
