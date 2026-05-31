@@ -21,7 +21,7 @@ class Parser {
 
   Parser(this.tokens);
 
-  ASTNode parse() {
+  ProgramNode parse() {
     final List<ASTNode> result = [];
     while (_peek() != null) {
       result.add(_parseExpression());

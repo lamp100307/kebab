@@ -16,18 +16,10 @@ class SemanticAnalyser {
 
   void analyse() {
     final Scope globalScope = Scope(null);
-    switch (nodes) {
-      case ProgramNode(statements: final statements):
-        for (final node in statements) {
-          analyseNode(node, globalScope);
-        }
-        return;
-      default:
-        return;
-    }
+    _analyseNode(nodes, globalScope);
   }
 
-  void analyseNode(final ASTNode node, final Scope scope) {
+  void _analyseNode(final ASTNode node, final Scope scope) {
     switch (node) {
       case IntNode():
       case BreakNode():
@@ -35,8 +27,8 @@ class SemanticAnalyser {
       case StringNode():
         return;
       case BOPNode(left: final left, right: final right):
-        analyseNode(left, scope);
-        analyseNode(right, scope);
+        _analyseNode(left, scope);
+        _analyseNode(right, scope);
         getNodeType(node, scope);
       case VarDeclNode(name: final name, type: final type, value: final value):
         if (scope.getWithoutMaster(name) != null) {
@@ -74,7 +66,7 @@ class SemanticAnalyser {
       case BlockNode(statements: final statements):
         final scope_ = Scope(scope);
         for (final statement in statements) {
-          analyseNode(statement, scope_);
+          _analyseNode(statement, scope_);
         }
       case IfNode(
         condition: final condition,
@@ -89,10 +81,10 @@ class SemanticAnalyser {
             ),
           );
         }
-        analyseNode(condition, scope);
-        analyseNode(thenBlock, scope);
+        _analyseNode(condition, scope);
+        _analyseNode(thenBlock, scope);
         if (elseBlock != null) {
-          analyseNode(elseBlock, scope);
+          _analyseNode(elseBlock, scope);
         }
         return;
       case ForNode(
@@ -110,13 +102,13 @@ class SemanticAnalyser {
           );
         }
         if (init != null) {
-          analyseNode(init, scope);
+          _analyseNode(init, scope);
         }
-        analyseNode(cond, scope);
+        _analyseNode(cond, scope);
         if (step != null) {
-          analyseNode(step, scope);
+          _analyseNode(step, scope);
         }
-        analyseNode(block, scope);
+        _analyseNode(block, scope);
         return;
       case WhileNode(condition: final condition, block: final block):
         if (getNodeType(condition, scope) != KebabType.bool) {
@@ -127,11 +119,11 @@ class SemanticAnalyser {
             ),
           );
         }
-        analyseNode(condition, scope);
-        analyseNode(block, scope);
+        _analyseNode(condition, scope);
+        _analyseNode(block, scope);
         return;
       case LoopNode(block: final block):
-        analyseNode(block, scope);
+        _analyseNode(block, scope);
         return;
       case _:
         return;
