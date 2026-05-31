@@ -12,8 +12,6 @@ mixin DebugPrint {
       } else {
         print(item.toString());
       }
-    } else {
-      print(item.toString());
     }
   }
 }
