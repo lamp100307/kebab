@@ -147,3 +147,32 @@ class ContinueNode extends ASTNode {
   @override
   String toString() => "ContinueNode()";
 }
+
+class ReturnNode extends ASTNode {
+  final ASTNode? value;
+
+  ReturnNode(this.value);
+
+  @override
+  String toString() => "ReturnNode()";
+}
+
+class Arg {
+  final String name;
+  final KebabType type;
+
+  Arg(this.name, this.type);
+}
+
+class FuncDefNode extends ASTNode {
+  final String name;
+  final List<Arg> args;
+  final ASTNode block;
+  final KebabType? returnType;
+
+  FuncDefNode(this.name, this.args, this.block, this.returnType);
+
+  @override
+  String toString() =>
+      "FuncDefNode(name: $name, args: $args, block: $block, returnType: $returnType)";
+}

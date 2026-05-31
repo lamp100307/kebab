@@ -12,6 +12,7 @@ class Lexer {
     'loop',
     'break',
     'continue',
+    'return',
   ];
   Lexer(this.code);
 

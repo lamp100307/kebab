@@ -5,11 +5,17 @@ import 'var.dart';
 class SemanticAnalyser {
   final ASTNode nodes;
   final List<SemanticException> errors = [];
+  final Map<String, Var> vars = {};
 
   SemanticAnalyser(this.nodes);
 
+  void addVar(final Var var_, final Scope scope) {
+    vars.addEntries({var_.name: var_}.entries);
+    scope.add(var_);
+  }
+
   void analyse() {
-    final Scope globalScope = Scope();
+    final Scope globalScope = Scope(null);
     switch (nodes) {
       case ProgramNode(statements: final statements):
         for (final node in statements) {
@@ -33,7 +39,7 @@ class SemanticAnalyser {
         analyseNode(right, scope);
         getNodeType(node, scope);
       case VarDeclNode(name: final name, type: final type, value: final value):
-        if (scope.get(name) != null) {
+        if (scope.getWithoutMaster(name) != null) {
           errors.add(SemanticVarAlreadyDefinedException(name));
         }
         if (type != null && type != getNodeType(value, scope)) {
@@ -42,7 +48,7 @@ class SemanticAnalyser {
           );
         }
         final type_ = type ?? getNodeType(value, scope);
-        scope.add(Var(name, type_));
+        addVar(Var(name, type_), scope);
         return;
       case VarAssignNode(name: final name, value: final value):
         if (scope.get(name) == null) {
@@ -66,19 +72,15 @@ class SemanticAnalyser {
           errors.add(SemanticUnimplementedException());
         }
       case BlockNode(statements: final statements):
+        final scope_ = Scope(scope);
         for (final statement in statements) {
-          analyseNode(statement, scope);
+          analyseNode(statement, scope_);
         }
       case IfNode(
         condition: final condition,
         thenBlock: final thenBlock,
         elseBlock: final elseBlock,
       ):
-        analyseNode(condition, scope);
-        analyseNode(thenBlock, scope);
-        if (elseBlock != null) {
-          analyseNode(elseBlock, scope);
-        }
         if (getNodeType(condition, scope) != KebabType.bool) {
           errors.add(
             SemanticTypeMismatchException(
@@ -86,6 +88,11 @@ class SemanticAnalyser {
               getNodeType(condition, scope),
             ),
           );
+        }
+        analyseNode(condition, scope);
+        analyseNode(thenBlock, scope);
+        if (elseBlock != null) {
+          analyseNode(elseBlock, scope);
         }
         return;
       case ForNode(
@@ -94,14 +101,6 @@ class SemanticAnalyser {
         step: final step,
         block: final block,
       ):
-        if (init != null) {
-          analyseNode(init, scope);
-        }
-        analyseNode(cond, scope);
-        if (step != null) {
-          analyseNode(step, scope);
-        }
-        analyseNode(block, scope);
         if (getNodeType(cond, scope) != KebabType.bool) {
           errors.add(
             SemanticTypeMismatchException(
@@ -110,10 +109,16 @@ class SemanticAnalyser {
             ),
           );
         }
+        if (init != null) {
+          analyseNode(init, scope);
+        }
+        analyseNode(cond, scope);
+        if (step != null) {
+          analyseNode(step, scope);
+        }
+        analyseNode(block, scope);
         return;
       case WhileNode(condition: final condition, block: final block):
-        analyseNode(condition, scope);
-        analyseNode(block, scope);
         if (getNodeType(condition, scope) != KebabType.bool) {
           errors.add(
             SemanticTypeMismatchException(
@@ -122,6 +127,8 @@ class SemanticAnalyser {
             ),
           );
         }
+        analyseNode(condition, scope);
+        analyseNode(block, scope);
         return;
       case LoopNode(block: final block):
         analyseNode(block, scope);

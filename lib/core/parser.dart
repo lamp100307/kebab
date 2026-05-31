@@ -199,6 +199,9 @@ class Parser {
           case 'continue':
             _next();
             return ContinueNode();
+          case 'return':
+            _next();
+            return ReturnNode(_parseExpression());
           case _:
             throw Exception('Unexpected keyword: ${_peek()}');
         }

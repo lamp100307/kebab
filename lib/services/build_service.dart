@@ -30,10 +30,9 @@ final class BuildService with DebugPrint implements BaseService {
     return nodes;
   }
 
-  String _getReadyCode(final ASTNode nodes) {
+  String _getReadyCode(final ASTNode nodes, final Map<String, Var> vars) {
     final LLVMGenerator compiler = LLVMGenerator();
-    compiler.addDependencies(nodes);
-    final output = compiler.generate(nodes).trim();
+    final output = compiler.generateIr(nodes, vars).trim();
     debugPrint(output);
     return output;
   }
@@ -51,12 +50,14 @@ final class BuildService with DebugPrint implements BaseService {
     }
   }
 
-  void _analyseAndTrowsExceptions(final ASTNode nodes) {
+  Map<String, Var> _analyseAndTrowsExceptions(final ASTNode nodes) {
     final SemanticAnalyser analyser = SemanticAnalyser(nodes);
     analyser.analyse();
     if (analyser.errors.isNotEmpty) {
       throw SemanticMultipleExceptions(analyser.errors);
     }
+    debugPrint(analyser.vars);
+    return analyser.vars;
   }
 
   @override
@@ -72,8 +73,8 @@ final class BuildService with DebugPrint implements BaseService {
 
     final tokens = _getTokens(code);
     final nodes = _getNodes(tokens);
-    _analyseAndTrowsExceptions(nodes);
-    final output = _getReadyCode(nodes);
+    final vars = _analyseAndTrowsExceptions(nodes);
+    final output = _getReadyCode(nodes, vars);
 
     _intermediateFile.createSync(recursive: true);
     _intermediateFile.writeAsStringSync(output);

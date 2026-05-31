@@ -1,505 +1,291 @@
 import 'ast_nodes.dart';
+import 'var.dart' show Var;
 
 class LLVMGenerator {
-  final StringBuffer _ir = StringBuffer();
-  int _nextRegister = 1;
-  int _nextLabel = 1;
-  final Map<String, String> _variables = {}; // name -> LLVM register (alloca)
-  final List<String> _stringLiterals = [];
-  final List<Map<String, String>> _variableScopes = []; // Scopes of variables
+  final StringBuffer _globals = StringBuffer();
+  final StringBuffer _code = StringBuffer();
 
-  // Stack for tracking loop labels (continueLabel, breakLabel)
-  final List<_LoopLabels> _loopStack = [];
+  int _tmpId = 0;
+  int _lblId = 0;
+  int _strId = 0;
 
-  String addDependencies(final ASTNode node) {
-    String result = '';
+  final Map<String, String> _allocas = {};
+  final Map<String, KebabType> _types = {};
+
+  final List<String> _breakStack = [];
+  final List<String> _continueStack = [];
+
+  String addDependencies(final ASTNode program, final Map<String, Var> vars) {
+    final dependencies = StringBuffer();
+
     bool hasPrint = false;
+    bool needIntFmt = false;
+    bool needStrFmt = false;
 
-    void traverse(final ASTNode n) {
-      if (n is ProgramNode) {
-        for (final statement in n.statements) {
-          traverse(statement);
+    void check(final ASTNode node) {
+      switch (node) {
+        case ProgramNode(statements: final stmts):
+          for (final s in stmts) {
+            check(s);
+          }
+        case BlockNode(statements: final stmts):
+          for (final s in stmts) {
+            check(s);
+          } 
+        case IfNode(condition: final c, thenBlock: final t, elseBlock: final e):
+          check(c); check(t); if (e!= null) check(e);
+        case WhileNode(condition: final c, block: final b):
+          check(c); check(b);
+        case ForNode(init: final i, cond: final c, step: final s, block: final b):
+          if (i!= null) check(i); check(c); if (s!= null) check(s); check(b);
+        case LoopNode(block: final b): check(b);
+        case VarDeclNode(value: final v): check(v);
+        case VarAssignNode(value: final v): check(v);
+        case BOPNode(left: final l, right: final r): check(l); check(r);
+        case CallNode(name: final name, args: final args):
+          if (name == 'print') {
+            hasPrint = true;
+            if (args.isNotEmpty) {
+              final arg = args.first;
+              switch (arg) {
+                case StringNode(): needStrFmt = true;
+                case IntNode(): needIntFmt = true;
+                case BOPNode(op: final op) when const ['==','!=','<','<=','>','>=','&&','||'].contains(op):
+                  needIntFmt = true;
+                case VarRefNode(name: final n):
+                  final t = vars[n]?.type;
+                  if (t == KebabType.string) {
+                    needStrFmt = true;
+                  } else {
+                    needIntFmt = true;
+                  }
+                default: needIntFmt = true;
+              }
+              check(arg);
+            }
+          } else {
+            for (final a in args) {
+              check(a);
+            }
+          }
+        case VarRefNode(): case IntNode(): case StringNode(): case BreakNode(): case ContinueNode(): break;
+      }
+    }
+
+    check(program);
+
+    if (hasPrint) {
+      dependencies.writeln('declare i32 @printf(i8*,...)');
+      if (needIntFmt) dependencies.writeln('@.str.int = private unnamed_addr constant [4 x i8] c"%d\\0A\\00"');
+      if (needStrFmt) dependencies.writeln('@.str.str = private unnamed_addr constant [4 x i8] c"%s\\0A\\00"');
+    }
+    return dependencies.toString();
+  }
+
+  String generateIr(final ASTNode program, final Map<String, Var> vars) {
+    _globals.writeln(addDependencies(program, vars));
+    
+    _code.writeln('define i32 @main() {');
+    _code.writeln('entry:');
+
+    _gen(program);
+
+    _code.writeln('  ret i32 0');
+    _code.writeln('}');
+    return '$_globals\n$_code';
+  }
+
+  String _tmp() => '%t${_tmpId++}';
+  String _nextLbl(final String base) => '${base}_${_lblId++}';
+
+  String _llvmType(final KebabType t) => switch (t) {
+    KebabType.int => 'i32',
+    KebabType.bool => 'i1',
+    KebabType.string => 'i8*',
+    KebabType.none => 'void',
+  };
+
+  KebabType _infer(final ASTNode n) => switch (n) {
+    IntNode() => KebabType.int,
+    StringNode() => KebabType.string,
+    BOPNode(op: final op) when const ['==','!=','<','<=','>','>=','&&','||'].contains(op) => KebabType.bool,
+    VarRefNode(name: final name) => _types[name] ?? KebabType.int,
+    _ => KebabType.int,
+  };
+
+  String _escape(final String s) => s
+      .replaceAll('\\', '\\5C')
+      .replaceAll('"', '\\22')
+      .replaceAll('\n', '\\0A');
+
+  String _gen(final ASTNode node) {
+    switch (node) {
+      case ProgramNode(statements: final stmts):
+        for (final s in stmts) {
+          _gen(s);
         }
-      } else if (n is CallNode && n.name == 'print' && !hasPrint) {
-        result += 'declare i32 @printf(i8*, ...)\n';
-        hasPrint = true;
-      } else if (n is BlockNode) {
-        for (final statement in n.statements) {
-          traverse(statement);
+        return '';
+
+      case BlockNode(statements: final stmts):
+        for (final s in stmts) {
+          _gen(s);
         }
-      } else if (n is IfNode) {
-        traverse(n.condition);
-        traverse(n.thenBlock);
-        if (n.elseBlock != null) traverse(n.elseBlock!);
-      } else if (n is BOPNode) {
-        traverse(n.left);
-        traverse(n.right);
-      } else if (n is ForNode) {
-        traverse(n.cond);
-        traverse(n.block);
-        if (n.step != null) traverse(n.step!);
-        if (n.init != null) traverse(n.init!);
-      } else if (n is WhileNode) {
-        traverse(n.condition);
-        traverse(n.block);
-      } else if (n is LoopNode) {
-        traverse(n.block);
-      }
+        return '';
+
+      case IntNode(value: final v):
+        return v.toString();
+
+      case StringNode(value: final v):
+        final id = _strId++;
+        _globals.writeln('@.s$id = private unnamed_addr constant [${v.length + 1} x i8] c"${_escape(v)}\\00"');
+        final r = _tmp();
+        _code.writeln('  $r = getelementptr inbounds [${v.length + 1} x i8], [${v.length + 1} x i8]* @.s$id, i32 0, i32 0');
+        return r;
+
+      case VarDeclNode(name: final n, type: final t, value: final v):
+        final kt = t ?? _infer(v);
+        final lt = _llvmType(kt);
+        final ptr = '%$n';
+        _allocas[n] = ptr;
+        _types[n] = kt;
+        _code.writeln('  $ptr = alloca $lt');
+        final val = _gen(v);
+        _code.writeln('  store $lt $val, $lt* $ptr');
+        return '';
+
+      case VarAssignNode(name: final n, value: final v):
+        final ptr = _allocas[n]!;
+        final lt = _llvmType(_types[n]!);
+        final val = _gen(v);
+        _code.writeln('  store $lt $val, $lt* $ptr');
+        return '';
+
+      case VarRefNode(name: final n):
+        final ptr = _allocas[n]!;
+        final lt = _llvmType(_types[n]!);
+        final r = _tmp();
+        _code.writeln('  $r = load $lt, $lt* $ptr');
+        return r;
+
+      case BOPNode(left: final l, op: final o, right: final r):
+        final lv = _gen(l);
+        final rv = _gen(r);
+        final res = _tmp();
+        switch (o) {
+          case '+': _code.writeln('  $res = add nsw i32 $lv, $rv');
+          case '-': _code.writeln('  $res = sub nsw i32 $lv, $rv');
+          case '*': _code.writeln('  $res = mul nsw i32 $lv, $rv');
+          case '/': _code.writeln('  $res = sdiv i32 $lv, $rv');
+          case '%': _code.writeln('  $res = srem i32 $lv, $rv');
+          case '==': _code.writeln('  $res = icmp eq i32 $lv, $rv');
+          case '!=': _code.writeln('  $res = icmp ne i32 $lv, $rv');
+          case '<': _code.writeln('  $res = icmp slt i32 $lv, $rv');
+          case '<=': _code.writeln('  $res = icmp sle i32 $lv, $rv');
+          case '>': _code.writeln('  $res = icmp sgt i32 $lv, $rv');
+          case '>=': _code.writeln('  $res = icmp sge i32 $lv, $rv');
+          case '&&': _code.writeln('  $res = and i1 $lv, $rv');
+          case '||': _code.writeln('  $res = or i1 $lv, $rv');
+          default: throw 'unknown op $o';
+        }
+        return res;
+
+      case CallNode(name: final n, args: final a):
+        if (n == 'print' && a.isNotEmpty) {
+          final arg = a.first;
+          final val = _gen(arg);
+          final kt = _infer(arg);
+          if (kt == KebabType.string) {
+            _code.writeln('  call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.str.str, i32 0, i32 0), i8* $val)');
+          } else if (kt == KebabType.bool) {
+            final ext = _tmp();
+            _code.writeln('  $ext = zext i1 $val to i32');
+            _code.writeln('  call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.str.int, i32 0, i32 0), i32 $ext)');
+          } else {
+            _code.writeln('  call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.str.int, i32 0, i32 0), i32 $val)');
+          }
+        }
+        return '';
+
+      case IfNode(condition: final c, thenBlock: final t, elseBlock: final e):
+        final cond = _gen(c);
+        final thenL = _nextLbl('if.then');
+        final elseL = _nextLbl('if.else');
+        final endL = _nextLbl('if.end');
+        _code.writeln('  br i1 $cond, label %$thenL, label %${e != null ? elseL : endL}');
+        _code.writeln('$thenL:');
+        _gen(t);
+        _code.writeln('  br label %$endL');
+        if (e != null) {
+          _code.writeln('$elseL:');
+          _gen(e);
+          _code.writeln('  br label %$endL');
+        }
+        _code.writeln('$endL:');
+        return '';
+
+      case WhileNode(condition: final c, block: final b):
+        final condL = _nextLbl('while.cond');
+        final bodyL = _nextLbl('while.body');
+        final endL = _nextLbl('while.end');
+        _breakStack.add(endL);
+        _continueStack.add(condL);
+        _code.writeln('  br label %$condL');
+        _code.writeln('$condL:');
+        final cond = _gen(c);
+        _code.writeln('  br i1 $cond, label %$bodyL, label %$endL');
+        _code.writeln('$bodyL:');
+        _gen(b);
+        _code.writeln('  br label %$condL');
+        _code.writeln('$endL:');
+        _breakStack.removeLast();
+        _continueStack.removeLast();
+        return '';
+
+      case ForNode(init: final i, cond: final c, step: final s, block: final b):
+        if (i != null) _gen(i);
+        final condL = _nextLbl('for.cond');
+        final bodyL = _nextLbl('for.body');
+        final stepL = _nextLbl('for.step');
+        final endL = _nextLbl('for.end');
+        _breakStack.add(endL);
+        _continueStack.add(stepL);
+        _code.writeln('  br label %$condL');
+        _code.writeln('$condL:');
+        final cond = _gen(c);
+        _code.writeln('  br i1 $cond, label %$bodyL, label %$endL');
+        _code.writeln('$bodyL:');
+        _gen(b);
+        _code.writeln('  br label %$stepL');
+        _code.writeln('$stepL:');
+        if (s != null) _gen(s);
+        _code.writeln('  br label %$condL');
+        _code.writeln('$endL:');
+        _breakStack.removeLast();
+        _continueStack.removeLast();
+        return '';
+
+      case LoopNode(block: final b):
+        final bodyL = _nextLbl('loop');
+        final endL = _nextLbl('loop.end');
+        _breakStack.add(endL);
+        _continueStack.add(bodyL);
+        _code.writeln('  br label %$bodyL');
+        _code.writeln('$bodyL:');
+        _gen(b);
+        _code.writeln('  br label %$bodyL');
+        _code.writeln('$endL:');
+        _breakStack.removeLast();
+        _continueStack.removeLast();
+        return '';
+
+      case BreakNode():
+        _code.writeln('  br label %${_breakStack.last}');
+        return '';
+
+      case ContinueNode():
+        _code.writeln('  br label %${_continueStack.last}');
+        return '';
     }
-
-    traverse(node);
-    return result;
+    return '';
   }
-
-  String generate(final ASTNode node) {
-    _ir.clear();
-    _nextRegister = 1;
-    _nextLabel = 1;
-    _variables.clear();
-    _stringLiterals.clear();
-    _variableScopes.clear();
-    _loopStack.clear();
-
-    _ir.writeln('; ModuleID = "kebab"');
-    _ir.writeln('target triple = "x86_64-pc-linux-gnu"');
-    _ir.writeln(addDependencies(node));
-    _ir.writeln();
-    _ir.writeln();
-
-    _generateNode(node);
-
-    return _ir.toString();
-  }
-
-  String _newRegister() => '%${_nextRegister++}';
-  String _newLabel() => 'label${_nextLabel++}';
-
-  void _pushScope() {
-    _variableScopes.add(Map.from(_variables));
-  }
-
-  void _popScope() {
-    if (_variableScopes.isNotEmpty) {
-      final previousScope = _variableScopes.removeLast();
-      _variables.clear();
-      _variables.addAll(previousScope);
-    }
-  }
-
-  void _pushLoop(final String continueLabel, final String breakLabel) {
-    _loopStack.add(_LoopLabels(continueLabel, breakLabel));
-  }
-
-  void _popLoop() {
-    if (_loopStack.isNotEmpty) {
-      _loopStack.removeLast();
-    }
-  }
-
-  _LoopLabels? _getCurrentLoop() =>
-      _loopStack.isNotEmpty ? _loopStack.last : null;
-
-  void _generateNode(final ASTNode node) {
-    if (node is ProgramNode) {
-      _generateProgram(node);
-    } else {
-      throw Exception('Unknown AST node: ${node.runtimeType}');
-    }
-  }
-
-  void _generateProgram(final ProgramNode program) {
-    _ir.writeln('define i32 @main() {');
-    _ir.writeln('entry:');
-
-    for (final statement in program.statements) {
-      _generateStatement(statement);
-    }
-
-    _ir.writeln('  ret i32 0');
-    _ir.writeln('}');
-    _ir.writeln();
-
-    _addStringLiterals();
-  }
-
-  void _generateStatement(final ASTNode node) {
-    if (node is VarDeclNode) {
-      _generateVarDecl(node);
-    } else if (node is VarAssignNode) {
-      _generateVarAssign(node);
-    } else if (node is CallNode) {
-      _generateCall(node);
-    } else if (node is BOPNode) {
-      _generateExpr(node);
-    } else if (node is BlockNode) {
-      _generateBlock(node);
-    } else if (node is IfNode) {
-      _generateIf(node);
-    } else if (node is ForNode) {
-      _generateFor(node);
-    } else if (node is WhileNode) {
-      _generateWhile(node);
-    } else if (node is LoopNode) {
-      _generateLoop(node);
-    } else if (node is BreakNode) {
-      _generateBreak(node);
-    } else if (node is ContinueNode) {
-      _generateContinue(node);
-    } else {
-      throw Exception('Unknown statement: ${node.runtimeType}');
-    }
-  }
-
-  void _generateBlock(final BlockNode node) {
-    _pushScope();
-    for (final statement in node.statements) {
-      _generateStatement(statement);
-    }
-    _popScope();
-  }
-
-  void _generateIf(final IfNode node) {
-    // Gen condition
-    final condReg = _generateCondition(node.condition);
-
-    final thenLabel = _newLabel();
-    final elseLabel = _newLabel();
-    final endLabel = _newLabel();
-
-    // Conditional jump
-    _ir.writeln(
-      '  br i1 $condReg, label %$thenLabel, label %${node.elseBlock != null ? elseLabel : endLabel}',
-    );
-
-    // Then block
-    _ir.writeln('$thenLabel:');
-    _pushScope();
-    _generateStatement(node.thenBlock);
-    _popScope();
-    _ir.writeln('  br label %$endLabel');
-
-    // Else block (if have)
-    if (node.elseBlock != null) {
-      _ir.writeln('$elseLabel:');
-      _pushScope();
-      _generateStatement(node.elseBlock!);
-      _popScope();
-      _ir.writeln('  br label %$endLabel');
-    }
-
-    // End of if
-    _ir.writeln('$endLabel:');
-  }
-
-  String _generateCondition(final ASTNode node) {
-    if (node is BOPNode) {
-      return _generateComparison(node);
-    } else {
-      final value = _generateExpr(node);
-      final result = _newRegister();
-      _ir.writeln('  $result = icmp ne i32 $value, 0');
-      return result;
-    }
-  }
-
-  void _generateLoop(final LoopNode node) {
-    final continueLabel =
-        _newLabel(); // Mark for continue (go to the beginning)
-    final breakLabel = _newLabel(); // Mark for break (exit the loop)
-
-    _pushLoop(continueLabel, breakLabel);
-    _pushScope();
-
-    _ir.writeln('  br label %$continueLabel');
-    _ir.writeln('$continueLabel:');
-    _generateStatement(node.block);
-    _ir.writeln('  br label %$continueLabel');
-
-    _ir.writeln('$breakLabel:');
-
-    _popScope();
-    _popLoop();
-  }
-
-  void _generateWhile(final WhileNode node) {
-    final condLabel = _newLabel();
-    final continueLabel =
-        _newLabel(); // Mark for continue (go to the condition)
-    final breakLabel = _newLabel(); // Mark for break (exit the loop)
-
-    _pushLoop(continueLabel, breakLabel);
-    _pushScope();
-
-    _ir.writeln('  br label %$condLabel');
-
-    _ir.writeln('$condLabel:');
-    final condReg = _generateCondition(node.condition);
-    _ir.writeln('  br i1 $condReg, label %$continueLabel, label %$breakLabel');
-
-    _ir.writeln('$continueLabel:');
-    _generateStatement(node.block);
-    _ir.writeln('  br label %$condLabel');
-
-    _ir.writeln('$breakLabel:');
-
-    _popScope();
-    _popLoop();
-  }
-
-  void _generateFor(final ForNode node) {
-    final condLabel = _newLabel();
-    final continueLabel = _newLabel(); // Mark for continue (go to the step)
-    final stepLabel = _newLabel();
-    final breakLabel = _newLabel(); // Mark for break (exit the loop)
-
-    _pushLoop(continueLabel, breakLabel);
-    _pushScope();
-
-    if (node.init != null) {
-      _generateStatement(node.init!);
-    }
-
-    _ir.writeln('  br label %$condLabel');
-
-    _ir.writeln('$condLabel:');
-    final condReg = _generateCondition(node.cond);
-    _ir.writeln('  br i1 $condReg, label %$continueLabel, label %$breakLabel');
-
-    _ir.writeln('$continueLabel:');
-    _generateStatement(node.block);
-    _ir.writeln('  br label %$stepLabel');
-
-    _ir.writeln('$stepLabel:');
-    if (node.step != null) {
-      _generateStatement(node.step!);
-    }
-    _ir.writeln('  br label %$condLabel');
-
-    _ir.writeln('$breakLabel:');
-
-    _popScope();
-    _popLoop();
-  }
-
-  void _generateBreak(final BreakNode node) {
-    final currentLoop = _getCurrentLoop();
-    if (currentLoop == null) {
-      throw Exception('Break statement outside of loop');
-    }
-    _ir.writeln('  br label %${currentLoop.breakLabel}');
-  }
-
-  void _generateContinue(final ContinueNode node) {
-    final currentLoop = _getCurrentLoop();
-    if (currentLoop == null) {
-      throw Exception('Continue statement outside of loop');
-    }
-    _ir.writeln('  br label %${currentLoop.continueLabel}');
-  }
-
-  String _generateComparison(final BOPNode node) {
-    final left = _generateExpr(node.left);
-    final right = _generateExpr(node.right);
-    final result = _newRegister();
-
-    switch (node.op) {
-      case '==':
-        _ir.writeln('  $result = icmp eq i32 $left, $right');
-        break;
-      case '!=':
-        _ir.writeln('  $result = icmp ne i32 $left, $right');
-        break;
-      case '<':
-        _ir.writeln('  $result = icmp slt i32 $left, $right');
-        break;
-      case '<=':
-        _ir.writeln('  $result = icmp sle i32 $left, $right');
-        break;
-      case '>':
-        _ir.writeln('  $result = icmp sgt i32 $left, $right');
-        break;
-      case '>=':
-        _ir.writeln('  $result = icmp sge i32 $left, $right');
-        break;
-      case _:
-        throw Exception('Unknown comparison operator: ${node.op}');
-    }
-
-    return result;
-  }
-
-  void _generateVarDecl(final VarDeclNode node) {
-    final varReg = _newRegister();
-    _variables[node.name] = varReg;
-    _ir.writeln('  $varReg = alloca i32, align 4');
-
-    final valueReg = _generateExpr(node.value);
-    _ir.writeln('  store i32 $valueReg, i32* $varReg, align 4');
-  }
-
-  void _generateVarAssign(final VarAssignNode node) {
-    if (!_variables.containsKey(node.name)) {
-      throw Exception('Variable "${node.name}" not declared');
-    }
-    final valueReg = _generateExpr(node.value);
-    final varReg = _variables[node.name];
-    _ir.writeln('  store i32 $valueReg, i32* $varReg, align 4');
-  }
-
-  String _generateExpr(final ASTNode node) {
-    if (node is IntNode) {
-      return node.value.toString();
-    } else if (node is StringNode) {
-      return _getStringLiteralPtr(node.value);
-    } else if (node is BOPNode) {
-      if (_isComparisonOperator(node.op)) {
-        final cond = _generateComparison(node);
-        final result = _newRegister();
-        _ir.writeln('  $result = zext i1 $cond to i32');
-        return result;
-      }
-      return _generateBinaryOp(node);
-    } else if (node is VarRefNode) {
-      return _generateVarRef(node);
-    } else if (node is CallNode) {
-      _generateCall(node);
-      return '0';
-    } else {
-      throw Exception('Unknown expression: ${node.runtimeType}');
-    }
-  }
-
-  bool _isComparisonOperator(final String op) =>
-      op == '==' ||
-      op == '!=' ||
-      op == '<' ||
-      op == '<=' ||
-      op == '>' ||
-      op == '>=';
-
-  String _generateBinaryOp(final BOPNode node) {
-    final left = _generateExpr(node.left);
-    final right = _generateExpr(node.right);
-    final result = _newRegister();
-
-    switch (node.op) {
-      case '+':
-        _ir.writeln('  $result = add i32 $left, $right');
-        break;
-      case '-':
-        _ir.writeln('  $result = sub i32 $left, $right');
-        break;
-      case '*':
-        _ir.writeln('  $result = mul i32 $left, $right');
-        break;
-      case '/':
-        _ir.writeln('  $result = sdiv i32 $left, $right');
-        break;
-      case _:
-        throw Exception('Unknown operator: ${node.op}');
-    }
-
-    return result;
-  }
-
-  String _generateVarRef(final VarRefNode node) {
-    if (!_variables.containsKey(node.name)) {
-      throw Exception('Variable "${node.name}" not declared');
-    }
-    final varReg = _variables[node.name];
-    final tempReg = _newRegister();
-    _ir.writeln('  $tempReg = load i32, i32* $varReg, align 4');
-    return tempReg;
-  }
-
-  void _generateCall(final CallNode node) {
-    if (node.name == 'print') {
-      _generatePrintCall(node);
-    } else {
-      _ir.writeln('  ; TODO: Implement call to ${node.name}');
-    }
-  }
-
-  void _generatePrintCall(final CallNode node) {
-    if (node.args.isEmpty) {
-      throw Exception('print requires at least one argument');
-    }
-
-    final arg = node.args.first;
-
-    if (arg is StringNode) {
-      final formatString = _getOrAddStringLiteral("%s\n");
-      final strPtr = _getStringLiteralPtr(arg.value);
-      final tempReg = _newRegister();
-      _ir.writeln(
-        '  $tempReg = call i32 (i8*, ...) @printf(i8* $formatString, i8* $strPtr)',
-      );
-    } else {
-      final formatString = _getOrAddStringLiteral("%d\n");
-      final value = _generateExpr(arg);
-      final tempReg = _newRegister();
-      _ir.writeln(
-        '  $tempReg = call i32 (i8*, ...) @printf(i8* $formatString, i32 $value)',
-      );
-    }
-  }
-
-  String _getOrAddStringLiteral(final String value) {
-    int index = _stringLiterals.indexOf(value);
-    if (index == -1) {
-      index = _stringLiterals.length;
-      _stringLiterals.add(value);
-    }
-    return _getStringLiteralPtrByIndex(index, value);
-  }
-
-  String _getStringLiteralPtr(final String value) {
-    int index = _stringLiterals.indexOf(value);
-    if (index == -1) {
-      index = _stringLiterals.length;
-      _stringLiterals.add(value);
-    }
-    return _getStringLiteralPtrByIndex(index, value);
-  }
-
-  String _getStringLiteralPtrByIndex(final int index, final String value) {
-    if (index == 0) {
-      return 'getelementptr inbounds ([${value.length + 1} x i8], [${value.length + 1} x i8]* @.str, i32 0, i32 0)';
-    } else {
-      return 'getelementptr inbounds ([${value.length + 1} x i8], [${value.length + 1} x i8]* @.str$index, i32 0, i32 0)';
-    }
-  }
-
-  void _addStringLiterals() {
-    if (_stringLiterals.isEmpty) return;
-
-    for (int i = 0; i < _stringLiterals.length; i++) {
-      final str = _stringLiterals[i];
-      final escaped = _escapeString(str);
-      if (i == 0) {
-        _ir.writeln(
-          '@.str = private unnamed_addr constant [${str.length + 1} x i8] c"$escaped\\00", align 1',
-        );
-      } else {
-        _ir.writeln(
-          '@.str$i = private unnamed_addr constant [${str.length + 1} x i8] c"$escaped\\00", align 1',
-        );
-      }
-    }
-  }
-
-  String _escapeString(final String str) => str
-      .replaceAll('\\', '\\\\')
-      .replaceAll('"', '\\"')
-      .replaceAll('\n', '\\0A')
-      .replaceAll('\r', '\\0D')
-      .replaceAll('\t', '\\09');
-}
-
-// Helper class for storing loop labels
-class _LoopLabels {
-  final String continueLabel;
-  final String breakLabel;
-
-  _LoopLabels(this.continueLabel, this.breakLabel);
 }
