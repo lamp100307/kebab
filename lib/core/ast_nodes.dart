@@ -16,6 +16,10 @@ class ProgramNode extends ASTNode {
   String toString() => "ProgramNode(statements: $statements)";
 }
 
+abstract class ValueNode {
+  Object get value;
+}
+
 class IntNode extends ASTNode {
   final int value;
 

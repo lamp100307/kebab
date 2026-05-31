@@ -2,4 +2,4 @@
 .zed/
 test/**/output/
 build/
-bin/kebab.exe
+bin/kebab
