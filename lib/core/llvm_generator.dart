@@ -52,6 +52,10 @@ class LLVMGenerator {
                 case IntNode(): needIntFmt = true;
                 case BOPNode(op: final op) when const ['==','!=','<','<=','>','>=','&&','||'].contains(op):
                   needIntFmt = true;
+                case BOPNode(left: final left, right: final right) when left is IntNode && right is IntNode:
+                  needIntFmt = true;
+                case BOPNode(left: final left, right: final right) when left is StringNode && right is StringNode:
+                  needStrFmt = true;
                 case VarRefNode(name: final n):
                   final t = vars[n]?.type;
                   if (t == KebabType.string) {
@@ -109,6 +113,11 @@ class LLVMGenerator {
     IntNode() => KebabType.int,
     StringNode() => KebabType.string,
     BOPNode(op: final op) when const ['==','!=','<','<=','>','>=','&&','||'].contains(op) => KebabType.bool,
+    BOPNode(left: final l, right: final r) => switch ((l, r)) {
+      (IntNode(), IntNode()) => KebabType.int,
+      (StringNode(), StringNode()) => KebabType.string,
+      _ => KebabType.bool,
+    },
     VarRefNode(name: final name) => _types[name] ?? KebabType.int,
     _ => KebabType.int,
   };
@@ -171,21 +180,29 @@ class LLVMGenerator {
         final lv = _gen(l);
         final rv = _gen(r);
         final res = _tmp();
-        switch (o) {
-          case '+': _code.writeln('  $res = add nsw i32 $lv, $rv');
-          case '-': _code.writeln('  $res = sub nsw i32 $lv, $rv');
-          case '*': _code.writeln('  $res = mul nsw i32 $lv, $rv');
-          case '/': _code.writeln('  $res = sdiv i32 $lv, $rv');
-          case '%': _code.writeln('  $res = srem i32 $lv, $rv');
-          case '==': _code.writeln('  $res = icmp eq i32 $lv, $rv');
-          case '!=': _code.writeln('  $res = icmp ne i32 $lv, $rv');
-          case '<': _code.writeln('  $res = icmp slt i32 $lv, $rv');
-          case '<=': _code.writeln('  $res = icmp sle i32 $lv, $rv');
-          case '>': _code.writeln('  $res = icmp sgt i32 $lv, $rv');
-          case '>=': _code.writeln('  $res = icmp sge i32 $lv, $rv');
-          case '&&': _code.writeln('  $res = and i1 $lv, $rv');
-          case '||': _code.writeln('  $res = or i1 $lv, $rv');
-          default: throw 'unknown op $o';
+        switch ((l, r)) {
+          case (IntNode(), IntNode()): 
+            switch (o) {
+            case '+': _code.writeln('  $res = add nsw i32 $lv, $rv');
+            case '-': _code.writeln('  $res = sub nsw i32 $lv, $rv');
+            case '*': _code.writeln('  $res = mul nsw i32 $lv, $rv');
+            case '/': _code.writeln('  $res = sdiv i32 $lv, $rv');
+            case '%': _code.writeln('  $res = srem i32 $lv, $rv');
+            case '==': _code.writeln('  $res = icmp eq i32 $lv, $rv');
+            case '!=': _code.writeln('  $res = icmp ne i32 $lv, $rv');
+            case '<': _code.writeln('  $res = icmp slt i32 $lv, $rv');
+            case '<=': _code.writeln('  $res = icmp sle i32 $lv, $rv');
+            case '>': _code.writeln('  $res = icmp sgt i32 $lv, $rv');
+            case '>=': _code.writeln('  $res = icmp sge i32 $lv, $rv');
+            case '&&': _code.writeln('  $res = and i1 $lv, $rv');
+            case '||': _code.writeln('  $res = or i1 $lv, $rv');
+            default: throw 'unknown op $o';
+          }
+          case (StringNode(value: final lv), StringNode(value: final rv)) when o == '+':
+            final id = _strId++;
+            _globals.writeln('@.s$id = private unnamed_addr constant [${lv.length + rv.length + 1} x i8] c"$lv$rv\\00"');
+            _code.writeln('  $res = getelementptr inbounds [${lv.length + rv.length + 1} x i8], [${lv.length + rv.length + 1} x i8]* @.s$id, i32 0, i32 0');
+            break;
         }
         return res;
 
