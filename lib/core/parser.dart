@@ -202,6 +202,9 @@ class Parser {
           case 'return':
             _next();
             return ReturnNode(_parseExpression());
+          case 'true' || 'false':
+            _next();
+            return BoolNode(value == 'true');
           case _:
             throw Exception('Unexpected keyword: ${_peek()}');
         }
@@ -218,8 +221,10 @@ class Parser {
         switch (value) {
           case 'int':
             return KebabType.int;
-          case 'String':
+          case 'string':
             return KebabType.string;
+          case 'bool':
+            return KebabType.bool;
           case _:
             throw Exception('Unexpected type: ${_peek()}');
         }

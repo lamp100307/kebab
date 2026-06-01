@@ -16,11 +16,12 @@ class ProgramNode extends ASTNode {
   String toString() => "ProgramNode(statements: $statements)";
 }
 
-abstract class ValueNode {
+abstract class ValueNode extends ASTNode {
   Object get value;
 }
 
-class IntNode extends ASTNode {
+class IntNode extends ValueNode {
+  @override
   final int value;
 
   IntNode(this.value);
@@ -29,13 +30,24 @@ class IntNode extends ASTNode {
   String toString() => "IntNode(value: $value)";
 }
 
-class StringNode extends ASTNode {
+class StringNode extends ValueNode {
+  @override
   final String value;
 
   StringNode(this.value);
 
   @override
   String toString() => "StringNode(value: $value)";
+}
+
+class BoolNode extends ValueNode {
+  @override
+  final bool value;
+  
+  BoolNode(this.value);
+
+  @override
+  String toString() => "BoolNode(value: $value)";
 }
 
 class BOPNode extends ASTNode {

@@ -3,6 +3,7 @@ import 'var.dart' show Var;
 
 class LLVMGenerator {
   final StringBuffer _globals = StringBuffer();
+  final Map<int, String> _strings = {};
   final StringBuffer _code = StringBuffer();
 
   int _tmpId = 0;
@@ -19,6 +20,7 @@ class LLVMGenerator {
     final dependencies = StringBuffer();
 
     bool hasPrint = false;
+    bool needKPrintBool = false;
     bool needIntFmt = false;
     bool needStrFmt = false;
 
@@ -50,8 +52,9 @@ class LLVMGenerator {
               switch (arg) {
                 case StringNode(): needStrFmt = true;
                 case IntNode(): needIntFmt = true;
+                case BoolNode(): needKPrintBool = true;
                 case BOPNode(op: final op) when const ['==','!=','<','<=','>','>=','&&','||'].contains(op):
-                  needIntFmt = true;
+                  needKPrintBool = true;
                 case BOPNode(left: final left, right: final right) when left is IntNode && right is IntNode:
                   needIntFmt = true;
                 case BOPNode(left: final left, right: final right) when left is StringNode && right is StringNode:
@@ -60,8 +63,8 @@ class LLVMGenerator {
                   final t = vars[n]?.type;
                   if (t == KebabType.string) {
                     needStrFmt = true;
-                  } else {
-                    needIntFmt = true;
+                  } else if (t == KebabType.bool) {
+                    needKPrintBool = true;
                   }
                 default: needIntFmt = true;
               }
@@ -83,6 +86,7 @@ class LLVMGenerator {
       if (needIntFmt) dependencies.writeln('@.str.int = private unnamed_addr constant [4 x i8] c"%d\\0A\\00"');
       if (needStrFmt) dependencies.writeln('@.str.str = private unnamed_addr constant [4 x i8] c"%s\\0A\\00"');
     }
+    if (needKPrintBool) dependencies.writeln('declare void @kprintbool(i1)');
     return dependencies.toString();
   }
 
@@ -112,6 +116,7 @@ class LLVMGenerator {
   KebabType _infer(final ASTNode n) => switch (n) {
     IntNode() => KebabType.int,
     StringNode() => KebabType.string,
+    BoolNode() => KebabType.bool,
     BOPNode(op: final op) when const ['==','!=','<','<=','>','>=','&&','||'].contains(op) => KebabType.bool,
     BOPNode(left: final l, right: final r) => switch ((l, r)) {
       (IntNode(), IntNode()) => KebabType.int,
@@ -145,11 +150,18 @@ class LLVMGenerator {
         return v.toString();
 
       case StringNode(value: final v):
-        final id = _strId++;
-        _globals.writeln('@.s$id = private unnamed_addr constant [${v.length + 1} x i8] c"${_escape(v)}\\00"');
+        if (!_strings.containsValue(v)) {
+          final id = _strId++;
+          _globals.writeln('@.s$id = private unnamed_addr constant [${v.length + 1} x i8] c"${_escape(v)}\\00"');
+          _strings[id] = v;
+        }
+        final id = _strings.keys.firstWhere((final k) => _strings[k] == v);
         final r = _tmp();
         _code.writeln('  $r = getelementptr inbounds [${v.length + 1} x i8], [${v.length + 1} x i8]* @.s$id, i32 0, i32 0');
         return r;
+
+      case BoolNode(value: final v):
+        return v ? 'true' : 'false';
 
       case VarDeclNode(name: final n, type: final t, value: final v):
         final kt = t ?? _infer(v);
@@ -214,9 +226,7 @@ class LLVMGenerator {
           if (kt == KebabType.string) {
             _code.writeln('  call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.str.str, i32 0, i32 0), i8* $val)');
           } else if (kt == KebabType.bool) {
-            final ext = _tmp();
-            _code.writeln('  $ext = zext i1 $val to i32');
-            _code.writeln('  call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.str.int, i32 0, i32 0), i32 $ext)');
+            _code.writeln('  call void @kprintbool(i1 $val)');
           } else {
             _code.writeln('  call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.str.int, i32 0, i32 0), i32 $val)');
           }

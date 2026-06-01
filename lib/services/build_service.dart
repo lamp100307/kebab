@@ -1,4 +1,6 @@
-import 'dart:io' show File, Process;
+import 'dart:io' show Directory, File, Process, Platform;
+
+import 'package:path/path.dart' as p;
 
 import '../build_config.dart';
 import '../config.dart';
@@ -38,8 +40,11 @@ final class BuildService with DebugPrint implements BaseService {
   }
 
   void _compile() {
+    final exePath = Platform.resolvedExecutable;
+    final exeDir = p.dirname(exePath);
     final compileResult = Process.runSync('clang', [
       _intermediateFile.path,
+      p.join(exeDir, 'runtime/runtime.o'),
       '-O${_buildConfig.mode.optimisationLevel}',
       '-o',
       _buildConfig.output.path,

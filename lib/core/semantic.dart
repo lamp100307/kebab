@@ -21,10 +21,11 @@ class SemanticAnalyser {
 
   void _analyseNode(final ASTNode node, final Scope scope) {
     switch (node) {
-      case IntNode():
-      case BreakNode():
-      case ContinueNode():
-      case StringNode():
+      case ProgramNode(statements: final stmts):
+        for (final s in stmts) {
+          _analyseNode(s, scope);
+        }
+      case IntNode() || StringNode() || BoolNode() || BreakNode() || ContinueNode():
         return;
       case BOPNode(left: final left, right: final right):
         _analyseNode(left, scope);
@@ -136,6 +137,8 @@ class SemanticAnalyser {
         return KebabType.int;
       case StringNode():
         return KebabType.string;
+      case BoolNode():
+        return KebabType.bool;
       case BOPNode(left: final left, op: final op, right: final right):
         if (['>', '>=', '<', '<=', '==', '!='].contains(op)) {
           return KebabType.bool;

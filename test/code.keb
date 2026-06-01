@@ -1,1 +1,15 @@
-print("Hello, " + "World!")
+x := true
+
+if x {
+    print(x)
+} else {
+    print("x not true :(")
+}
+
+x = false
+
+if x {
+    print(x)
+} else {
+    print("x not true :(")
+}
