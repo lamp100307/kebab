@@ -2,6 +2,8 @@ import 'token.dart';
 
 class Lexer {
   int pos = 0;
+  int line = 1;
+  int startOfLine = 0;
   final String code;
 
   final List<String> keywords = [
@@ -49,6 +51,9 @@ class Lexer {
     // Operatiors and punctuation
     pos++;
     switch (char) {
+      case '\n':
+        line++;
+        startOfLine = pos;
       case '+' || '-' || '*' || '%' || '>' || '<' || '!':
         return _readOperator();
 
@@ -219,5 +224,5 @@ class Lexer {
   bool _isLetterOrDigit(final String char) => _isLetter(char) || _isDigit(char);
 
   bool _isWhitespace(final String char) =>
-      char == ' ' || char == '\t' || char == '\n' || char == '\r';
+      char == ' ' || char == '\t' || char == '\r';
 }
